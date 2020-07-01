@@ -1,6 +1,6 @@
-type = "javascript"
-accountid = "6149cdb975d03c73edb1ba984159e74d"
-zoneid = "2ff6392051f54a50c21ef3a8929f807d"
+type = "webpack"
+account_id = "6149cdb975d03c73edb1ba984159e74d"
+zone_id = "2ff6392051f54a50c21ef3a8929f807d"
 name = "ipv6-tools"
 
 [env.staging]
