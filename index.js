@@ -1,21 +1,26 @@
 const Router = require('./router')
 
-const HTML = require('./mainpage.js')
+const MAINPAGE = require('./mainpage.js')
 
 addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
 })
 
-function mainpage(request) {
-        
-    return new Response(HTML)
+function mainpage_html(request) {
+    var html = MAINPAGE.replace("{{title}}","IP Tools")
+
+    return new Response(html,{headers:{"content-type":"text/html"}})
 }
 
 async function handleRequest(request) {
     const r = new Router()
     // Replace with the approriate paths and handlers
 
-    r.get('/', mainpage) // return a default message for the root route
+    r.get('/', mainpage_html) 
+    // r.get('/js', mainpage_js) 
+    // r.get('/css', mainpage_css)
+
+    r.get("*", () => Response.redirect("/"))
 
     const resp = await r.route(request)
     return resp
