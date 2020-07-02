@@ -20,7 +20,7 @@ async function handleRequest(request) {
     // r.get('/js', mainpage_js) 
     // r.get('/css', mainpage_css)
 
-    r.get(".*", () => Response.redirect("/"))
+    r.get(".*", () => Response.redirect("https://"+request.headers.get("Host")+"/"))
 
     const resp = await r.route(request)
     return resp
