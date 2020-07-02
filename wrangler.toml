@@ -8,5 +8,4 @@ name = "ipv6-tools-staging"
 route = "staging.ipv6.tools/*"
 
 [env.production]
-name = "ipv6-tools-prod"
 route = "ipv6.tools/*"
