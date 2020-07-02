@@ -84,7 +84,7 @@ function calccidr(el){
             $("#ipcidr-extra1").val(net.toFixedLengthString())
             $("#ipcidr-extra2-label").text("Broadcast")
             $("#ipcidr-extra2").val(brd.toFixedLengthString())
-            if(window.curval[2][1] != 32){
+            if(window.curval[2][1] > 31){
                 first.octets[3] += 1;
                 last.octets[3] -= 1;
             }
