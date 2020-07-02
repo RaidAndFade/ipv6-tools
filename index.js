@@ -9,7 +9,7 @@ addEventListener('fetch', event => {
 function mainpage_html(request) {
     var html = MAINPAGE.replace("{{title}}","IP Tools")
 
-    return new Response(html,{headers:{"content-type":"text/html"}})
+    return new Response(html,{headers:{"content-type":"text/html","Cache-Control":"public"}})
 }
 
 async function handleRequest(request) {
@@ -17,7 +17,7 @@ async function handleRequest(request) {
     // Replace with the approriate paths and handlers
 
     r.get('/', mainpage_html) 
-    // r.get('/js', mainpage_js) 
+    r.get('/app', ()=>new Response("CACHE MANIFEST\nhttps://"+request.headers.get("Host")+"/",{headers:{"content-type":"text/cache-manifest","Cache-Control":"public"}})) 
     // r.get('/css', mainpage_css)
 
     r.get(".*", () => Response.redirect("https://"+request.headers.get("Host")+"/"))

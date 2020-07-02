@@ -1,5 +1,5 @@
 module.exports = `<!doctype html>
-<html lang="en">
+<html lang="en" manifest="/app">
 <head>
 <meta charset="utf-8">
 <link rel="icon" href="data:;base64,iVBORw0KGgo=">
@@ -376,7 +376,7 @@ function calcnum(el){
             <a class="nav-link" id="subsbtn" onclick="changepage('ip2cidr')">IPs to CIDRs (WIP)</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('mbpscalc')">mbps(%ile) to GB/mo (WIP)</a>
+            <a class="nav-link" id="subsbtn" onclick="changepage('mbpscalc')">mbps to GB/mo (WIP)</a>
         </li>
     </ul>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
