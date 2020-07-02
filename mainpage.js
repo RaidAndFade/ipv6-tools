@@ -370,7 +370,13 @@ function calcnum(el){
             <a class="nav-link" id="ntoabtn" onclick="changepage('ntoa')">IP-Numeric</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnets</a>
+            <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnet Calc (WIP)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="subsbtn" onclick="changepage('ip2cidr')">IPs to CIDRs (WIP)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="subsbtn" onclick="changepage('mbpscalc')">mbps(%ile) to GB/mo (WIP)</a>
         </li>
     </ul>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
