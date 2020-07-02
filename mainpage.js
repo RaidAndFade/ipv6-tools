@@ -13,6 +13,10 @@ module.exports = `<!doctype html>
 .input-group { 
     padding-top:10px;
 }
+.result-box { 
+    font-family:Courier;
+    letter-spacing:-3px;
+}
 #page-container{
     max-width:800px;
 }
@@ -56,14 +60,18 @@ function calccidr(el){
         var cl = getClassFromKind(window.curval[1])
         var net = first = cl.networkAddressFromCIDR(window.curval[0]);
         var brd = last = cl.broadcastAddressFromCIDR(window.curval[0]);
-        $("#ipcidr-net").val(net.toString())
-        $("#ipcidr-broad").val(brd.toString())
-        if(window.curval[1]=="ipv4" && window.curval[2][1] != 32){
+        $("#ipcidr-net").val(net.toFixedLengthString())
+        $("#ipcidr-broad").val(brd.toFixedLengthString())
+        if(window.curval[1] == "ipv4" && window.curval[2][1] != 32){
             first.octets[3] += 1;
             last.octets[3] -= 1;
         }
-        $("#ipcidr-first").val(first.toString())
-        $("#ipcidr-last").val(last.toString())
+        if(window.curval[1] == "ipv6" && window.curval[2][1] != 128){
+            first.parts[15] += 1;
+            last.parts[15] -= 1;
+        }
+        $("#ipcidr-first").val(first.toFixedLengthString())
+        $("#ipcidr-last").val(last.toFixedLengthString())
     }else{
         $("#ipcidr-net").val("")
         $("#ipcidr-first").val("")
@@ -77,6 +85,71 @@ function calccidr(el){
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ipaddr.js/1.9.1/ipaddr.min.js" integrity="sha512-PjCdew0WqybdnWhii1fl13pGKtBEZEsvs7Y78JW7aNWFHZemM257wxVQxktnV3u8qU6i/qcOqWVPneUL+oCsWw==" crossorigin="anonymous"></script>
+<script>
+    window.ipaddr.IPv4.toFixedLengthString = window.ipaddr.IPv4.toString
+    window.ipaddr.IPv6.subnetMaskFromPrefixLength = function(len){
+        var mask = [];
+        var ones = len;
+        var zeros = 128-len;
+        while(ones>=8){
+            mask.push(0b11111111)
+            ones -= 8;
+        }
+
+        if(ones > 0){
+            middle = 0b0;
+            while(ones>0){
+                middle = 1<<7+middle>>1
+                ones -= 1;
+            }
+            mask.push(middle)
+        }
+        
+        zeros = zeros - zeros % 8
+        for(var x=0;x<zeros/8;x++){
+            mask.push(0b0);
+        }
+        return mask;
+    }
+    window.ipaddr.IPv6.networkAddressFromCIDR = function (string) {
+        let cidr, i, ipInterfaceOctets, octets, subnetMaskOctets;
+        try {
+            cidr = this.parseCIDR(string);
+            ipInterfaceOctets = cidr[0].toByteArray();
+            subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]);
+            octets = [];
+            i = 0;
+            while (i < 16) {
+                // Network address is bitwise AND between ip interface and mask
+                octets.push(parseInt(ipInterfaceOctets[i], 10) & subnetMaskOctets[i]);
+                i++;
+            }
+            return new this(octets);
+        } catch (e) {
+            console.log(e)
+            throw new Error('ipaddr: the address does not have IPv6 CIDR format');
+        }
+    };
+    window.ipaddr.IPv6.broadcastAddressFromCIDR = function (string) {
+        let cidr, i, ipInterfaceOctets, octets, subnetMaskOctets;
+        try {
+            cidr = this.parseCIDR(string);
+            ipInterfaceOctets = cidr[0].toByteArray();
+            subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]);
+            octets = [];
+            i = 0;
+            while (i < 16) {
+                // Network address is bitwise AND between ip interface and mask
+                octets.push(parseInt(ipInterfaceOctets[i], 10) | subnetMaskOctets[i] ^ 255);
+                i++;
+            }
+            return new this(octets);
+        } catch (e) {
+            console.log(e)
+            throw new Error('ipaddr: the address does not have IPv6 CIDR format');
+        }
+    };
+</script>
 </head>
 <body>
 <div class="container" id="page-container">
@@ -101,33 +174,25 @@ function calccidr(el){
                 <div class="input-group-prepend">
                 <span class="input-group-text" id="basic-addon1">IP/CIDR</span>
                 </div>
-                <input id="inputcidr" type="text" class="form-control" onkeyup='calccidr(this)' aria-describedby="basic-addon1">
+                <input id="inputcidr" type="text" class="form-control result-box" onkeyup='calccidr(this)' aria-describedby="basic-addon1">
             </div>
         </div>
         <div class="row data-row">
             <div class="input-group col-12 col-md-6">
-                <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">Network</span>
-                </div>
-                <input id="ipcidr-net" type="text" class="form-control" disabled aria-describedby="basic-addon1">
+                <div class="input-group-prepend"><span class="input-group-text" id="basic-addon1">Network</span></div>
+                <input id="ipcidr-net" type="text" class="form-control result-box" disabled aria-describedby="basic-addon1">
             </div>
             <div class="input-group col-12 col-md-6">
-                <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">Broadcast</span>
-                </div>
-                <input id="ipcidr-broad" type="text" class="form-control" disabled aria-describedby="basic-addon1">
+                <div class="input-group-prepend"><span class="input-group-text" id="basic-addon1">Broadcast</span></div>
+                <input id="ipcidr-broad" type="text" class="form-control result-box" disabled aria-describedby="basic-addon1">
             </div>
             <div class="input-group col-12 col-md-6">
-                <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">First</span>
-                </div>
-                <input id="ipcidr-first" type="text" class="form-control" disabled aria-describedby="basic-addon1">
+                <div class="input-group-prepend"><span class="input-group-text" id="basic-addon1">First</span></div>
+                <input id="ipcidr-first" type="text" class="form-control result-box" disabled aria-describedby="basic-addon1">
             </div>
             <div class="input-group col-12 col-md-6">
-                <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">Last</span>
-                </div>
-                <input id="ipcidr-last" type="text" class="form-control" disabled aria-describedby="basic-addon1">
+                <div class="input-group-prepend"><span class="input-group-text" id="basic-addon1">Last</span></div>
+                <input id="ipcidr-last" type="text" class="form-control result-box" disabled aria-describedby="basic-addon1">
             </div>
         </div>
         
