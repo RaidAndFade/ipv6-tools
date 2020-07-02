@@ -125,6 +125,104 @@ function calcrdns(el){
     $("#inputrdns").toggleClass("is-invalid",!valid)
     $("#inputrdns").toggleClass("is-valid",valid)
 }
+
+function calcnum(el){
+    var val = $("#inputnum").val().trim()
+
+    var outlabels = [];
+    var outvalues = [];
+
+    var valid = true;
+
+    const max_ipv4 = BigInt(2)**BigInt(32)-BigInt(1);
+    const max_ipv6 = BigInt(2)**BigInt(128)-BigInt(1);
+
+    var possible_outputs = {
+        "Hexadecimal": [(i)=>"0x"+i.toString(16),/0x[0-9a-fA-F]+/],
+        "Decimal": [(i)=>i.toString(10),/[0-9]+/],
+        "Binary": [(i)=>"0b"+i.toString(2),/0b[01]+/],
+        "Octal": [(i)=>"0o"+i.toString(8),/0o[0-7]+/],
+        "Address": [(i)=>{
+            if(i>max_ipv4){ //ipv6
+                var parts = [];
+                for(var j=0;j<8;j++){
+                    parts.push(i&BigInt(0xffff))
+                    i=i>>BigInt(16)
+                }
+                return new ipaddr.IPv6(parts.reverse()).toFixedLengthString()
+            }else{ //ipv4 OR ipv6 (but we only care about 4 in this range, since there are no useful 6s here atm)
+                var parts = [];
+                for(var j=0;j<4;j++){
+                    parts.push(i&BigInt(0xff))
+                    i=i>>BigInt(8)
+                }
+                return new ipaddr.IPv4(parts.reverse()).toFixedLengthString()
+            }
+        },null]
+    }
+    var input_type = null;
+
+    try{
+        if(val.indexOf(".")==-1 && val.indexOf(":")==-1){
+            throw "Invalid IP. But ipaddr likes to eat decimals so we need to check ourselves."
+        }
+        
+        var ip = ipaddr.parse(val)
+        var input_type = "Address";
+
+        var ipval = BigInt(0);
+
+        if(ip.kind()=="ipv4"){
+            for(var i=0;i<4;i++){
+                ipval = BigInt(ip.octets[i])+(ipval<<BigInt(8))
+            }
+        }else{
+            for(var i=0;i<8;i++){
+                ipval = BigInt(ip.parts[i])+(ipval<<BigInt(16))
+            }
+        }
+    }catch(e){
+        for(var type in possible_outputs){
+            if(possible_outputs[type][1]!=null && possible_outputs[type][1].test(val)){
+                input_type = type;
+                break;
+            }
+        }
+        
+        if(input_type != null){
+            try{
+                var ipval = BigInt(val)
+                
+                if(BigInt(0)>ipval || ipval>max_ipv6){
+                    input_type = null;
+                    valid = false;
+                }
+            }catch(e){
+                valid=false;
+            }
+        }
+    }
+    
+
+    if(input_type != null && valid){
+        var cur_out=1;
+        for(var x in possible_outputs){
+            if(input_type == x) continue
+
+            $("#ntoa-out"+cur_out+"-label").text(x+":")
+            $("#ntoa-out"+cur_out).val(possible_outputs[x][0](ipval))
+            cur_out += 1
+        }
+    }else{
+        for(var i=1;i<=4;i++){
+            $("#ntoa-out"+i+"-label").text("Output:")
+            $("#ntoa-out"+i).val("")
+        }
+    }
+
+    $("#inputnum").toggleClass("is-invalid",!valid)
+    $("#inputnum").toggleClass("is-valid",valid)
+}
 </script>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
@@ -269,7 +367,7 @@ function calcrdns(el){
             <a class="nav-link" id="rdnsbtn" onclick="changepage('rdns')">rDNS</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="ntoabtn" onclick="changepage('ntoa')">Binary/Decimal/Hex</a>
+            <a class="nav-link" id="ntoabtn" onclick="changepage('ntoa')">IP-Numeric</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnets</a>
@@ -318,6 +416,34 @@ function calcrdns(el){
             <div class="input-group inputGroup-sizing-sm col-12">
                 <label for="rdns-res" id="rdns-res-label" class="result-box-label col-12">Output:</label>
                 <input id="rdns-res" type="text" class="form-control result-box" readonly>
+            </div>
+        </div>
+    </div>
+    <div id="ntoa" class="col-12 container justify-content-center ip-form">
+        <div class="row data-row">
+            <div class="input-group col-12">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">IP/Number</span>
+                </div>
+                <input id="inputnum" type="text" class="form-control result-box" onkeyup='calcnum(this)' aria-describedby="basic-addon1">
+            </div>
+        </div>
+        <div class="row data-row">
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="ntoa-out1" id="ntoa-out1-label" class="result-box-label col-12">Output:</label>
+                <input id="ntoa-out1" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="ntoa-out2" id="ntoa-out2-label" class="result-box-label col-12">Output:</label>
+                <input id="ntoa-out2" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="ntoa-out3" id="ntoa-out3-label" class="result-box-label col-12">Output:</label>
+                <input id="ntoa-out3" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="ntoa-out4" id="ntoa-out4-label" class="result-box-label col-12">Output:</label>
+                <input id="ntoa-out4" type="text" class="form-control result-box" readonly>
             </div>
         </div>
     </div>
