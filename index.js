@@ -45,7 +45,7 @@ async function handleRequest(request) {
     self.addEventListener("fetch", function(t) {
         if(this.devel == null) this.devel=false;
         const cache_prefix = "ip-tools-cache";
-        const cache_version = "v1";
+        const cache_version = "v1.0.0";
         const cache_name = cache_prefix + "-" + cache_version;
 
         t.respondWith(caches.match(t.request).then(function(e) {

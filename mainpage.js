@@ -228,12 +228,12 @@ function calcsubnetlist(el, changedCIDR){
 
             var ipprefix = ipval-ipval%(BigInt(2)**BigInt(max_subs-subnet[1]))
             for(var i=BigInt(0);i<permutations;i++){
-                if(i > 2048){
+                if(i > BigInt(2048)){
                     html_out="Showing only the first "+i+" subnets. "+(permutations-i)+" subnets hidden.<br>"+html_out;
                     break;
                 }
-                var subnet = ipprefix + subnet_size*i;
-                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet,subnet[0].kind())+"/"+desired_sub+"'/>"
+                var subnet_val = ipprefix + subnet_size*i;
+                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet_val,subnet[0].kind())+"/"+desired_sub+"'/>"
             }
 
             $("#subcalc-out").html(html_out);
@@ -300,8 +300,6 @@ function calcrange(el){
                 netmap.push([curval,prefix]);
 
                 curval += net_sizes[firstip.kind()][prefix]
-
-                debugger;
             }
 
             var count=0;
@@ -310,7 +308,7 @@ function calcrange(el){
                     html_out="Showing only the first "+i+" subnets. "+(permutations-i)+" subnets hidden.<br>"+html_out;
                     break;
                 }
-                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(net[0],firstip.kind())+"/"+net[1]+"'/>"
+                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(net[0],firstip.kind()).toFixedLengthString()+"/"+net[1]+"'/>"
             }
         }else{
             firstvalid = false
