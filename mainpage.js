@@ -210,7 +210,8 @@ function calcsubnetlist(el, changedCIDR){
 
             var optionshtml = "";
             for(var i=subnet[1]+1;i<=max_subs;i++){
-                optionshtml += "<option value='"+i+"'>"+(BigInt(2)**BigInt(i-subnet[1]))+" Subnets (/"+i+")</option>"
+                var boldstyle = i%(max_subs==128?4:8)==0&&i!=max_subs?"style='font-weight:bold'":"";
+                optionshtml += "<option "+boldstyle+" value='"+i+"'>"+(BigInt(2)**BigInt(i-subnet[1]))+" Subnets (/"+i+")</option>"
             }
             var cidrselect = $("#inputsubssubnet").html(optionshtml);
         }
