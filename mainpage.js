@@ -228,8 +228,12 @@ function calcsubnetlist(el, changedCIDR){
 
             var ipprefix = ipval-ipval%(BigInt(2)**BigInt(max_subs-subnet[1]))
             for(var i=BigInt(0);i<permutations;i++){
+                if(i > 2048){
+                    html_out="Showing only the first "+i+" subnets. "+(permutations-i)+" subnets hidden.<br>"+html_out;
+                    break;
+                }
                 var subnet = ipprefix + subnet_size*i;
-                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet)+"/"+desired_sub+"'/>"
+                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet,subnet[0].kind())+"/"+desired_sub+"'/>"
             }
 
             $("#subcalc-out").html(html_out);
@@ -241,7 +245,6 @@ function calcsubnetlist(el, changedCIDR){
     $("#inputsubscidr").toggleClass("is-invalid",!valid)
     $("#inputsubscidr").toggleClass("is-valid",valid)
 }
-
 
 function calcmbps(el, mbps_changed){
     var mbps_val, gb_val, valid=true;
@@ -258,6 +261,67 @@ function calcmbps(el, mbps_changed){
     
     changed_element.toggleClass("is-invalid",!valid)
     other_element.toggleClass("is-invalid",false)
+}
+
+var net_sizes = {"ipv4":{},"ipv6":{}};
+for(var i=128;i>=0;i--){
+    if(i<=32){
+        net_sizes["ipv4"][i]=BigInt(2)**BigInt(32-i)
+    }
+    net_sizes["ipv6"][i]=BigInt(2)**BigInt(128-i)
+}
+
+
+function calcrange(el){
+    var firstip,lastip,html_out="";
+    var firstvalid=true,lastvalid=true;
+    try{
+        firstip=window.ipaddr.parse($("#inputcidr-firstip").val().trim())
+    }catch(e){firstvalid=false;}
+    try{
+        lastip=window.ipaddr.parse($("#inputcidr-lastip").val().trim())
+    }catch(e){lastvalid=false;}
+
+    if(firstvalid && lastvalid){
+        var firstval = ip2bigint(firstip);
+        var lastval = ip2bigint(lastip);
+        var single_ip_size = firstip.kind()=="ipv4"?32:128;
+        if(firstip.kind()==lastip.kind() && firstval<=lastval){
+            var netmap = [];
+
+            var curval = firstval;
+            while(curval<=lastval){
+                var max_size = maxprefix(curval,firstip.kind())
+                var val_dif = lastval-curval+BigInt(1);
+                var max_diff = single_ip_size- bigint_log2(val_dif.toString());//Math.floor(val_dif.toString().length * Math.log2(10) + Math.log2(parseFloat("0." + val_dif)));
+                
+                var prefix = max_size>max_diff?max_size:max_diff;
+
+                netmap.push([curval,prefix]);
+
+                curval += net_sizes[firstip.kind()][prefix]
+
+                debugger;
+            }
+
+            var count=0;
+            for(var net of netmap){
+                if(count++ > 2048){
+                    html_out="Showing only the first "+i+" subnets. "+(permutations-i)+" subnets hidden.<br>"+html_out;
+                    break;
+                }
+                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(net[0],firstip.kind())+"/"+net[1]+"'/>"
+            }
+        }else{
+            firstvalid = false
+            lastvalid = false;
+        }
+    }
+    $("#inputcidr-firstip").toggleClass("is-invalid",!firstvalid)
+    $("#inputcidr-lastip").toggleClass("is-invalid",!lastvalid)
+    $("#inputcidr-firstip").toggleClass("is-valid",firstvalid)
+    $("#inputcidr-lastip").toggleClass("is-valid",lastvalid)
+    $("#ip2cidr-out").html(html_out)
 }
 </script>
 <style>{{bootstrapcss}}</style>
@@ -276,7 +340,47 @@ function calcmbps(el, mbps_changed){
 <!-- <script src="https://peterolson.github.io/BigInteger.js/BigInteger.min.js"></script> -->
 <script>
     navigator.serviceWorker.register("swcacher.sw.js",{"updateViaCache":"all"})
-    
+
+    // Computes the number of 1-bits in a byte
+    // Source: http://www.hackersdelight.org/hdcodetxt/pop.c.txt
+    function countOneBits(x) {
+        var _0x55555555 = BigInt(0x55555555);
+        var _0x33333333 = BigInt(0x33333333);
+        var _0x0f0f0f0f = BigInt(0x0F0F0F0F);
+        var _0x0000003F = BigInt(0x0000003F);
+        x = x - ((x >> BigInt(1)) & _0x55555555);
+        x = (x & _0x33333333) + ((x >> BigInt(2)) & _0x33333333);
+        x = (x + (x >> BigInt(4))) & _0x0f0f0f0f;
+        x = x + (x >> BigInt(8));
+        x = x + (x >> BigInt(16));
+        return x & _0x0000003F;
+    }
+
+    function bigint_log2(x){
+        for(var i=0;i<128;i++){
+            if(x<net_sizes['ipv6'][128-i]){
+                return i-1;
+            }
+        }
+        return null;
+    }
+
+    function maxprefix(ip,kind="ipv4") {
+        if(kind=="ipv4"){
+            return countOneBits(-(ip & -(ip)))
+        }else{
+            var _0xffffffff = BigInt(0xffffffff);
+            var _32n = BigInt(32);
+            var num = -(ip & -(ip));
+            var count = BigInt(0);
+            for(var i=0;i<=3;i++){
+                count += countOneBits(num & _0xffffffff)
+                num = num>>_32n
+            }
+            return count 
+        }
+    }
+
     function arpa2ip(arpa){
         var v4arpa = arpa.match(/^((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3})\\.[iI][nN]-[aA][dD][dD][rR]\\.[aA][rR][pP][aA]$/)
         if(v4arpa != null){
@@ -451,10 +555,10 @@ function calcmbps(el, mbps_changed){
             <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnet Calc</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('ip2cidr')">IPs to CIDRs</a>
+            <a class="nav-link" id="ip2cidrbtn" onclick="changepage('ip2cidr')">IPs to CIDRs</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('mbpscalc')">mbps to GB/mo</a>
+            <a class="nav-link" id="mbpscalcbtn" onclick="changepage('mbpscalc')">mbps to GB/mo</a>
         </li>
     </ul>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
@@ -548,13 +652,32 @@ function calcmbps(el, mbps_changed){
         </div>
         <div class="row data-row">
             <div class="input-group inputGroup-sizing-sm col-12">
-                <label for="subcalc-out" id="ntoa-out3-label" class="result-box-label col-12">Possible Subnets:</label>
+                <label for="subcalc-out" class="result-box-label col-12">Possible Subnets:</label>
                 <div id="subcalc-out" class="col-12"></div>
             </div>
         </div>
     </div>
     <div id="ip2cidr" class="col-12 container justify-content-center ip-form">
-        IPs to CIDRs is a Work In Progress...
+        <div class="row data-row">
+            <div class="input-group col-12 col-sm-6">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">First IP</span>
+                </div>
+                <input id="inputcidr-firstip" type="text" class="form-control result-box" onkeyup='calcrange(this)' aria-describedby="basic-addon1">
+            </div>
+            <div class="input-group col-12 col-sm-6">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">Last IP</span>
+                </div>
+                <input id="inputcidr-lastip" type="text" class="form-control result-box" onkeyup='calcrange(this)' aria-describedby="basic-addon1">
+            </div>
+        </div>
+        <div class="row data-row">
+            <div class="input-group inputGroup-sizing-sm col-12">
+                <label for="ip2cidr-out" class="result-box-label col-12">Encompassing Subnets:</label>
+                <div id="ip2cidr-out" class="col-12"></div>
+            </div>
+        </div>
     </div>
     <div id="mbpscalc" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
