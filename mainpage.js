@@ -31,6 +31,9 @@ module.exports = `<!doctype html>
 .nav-item{
     cursor: pointer;
 }
+#ptitle {
+    text-align: center;
+}
 </style>
 <script>
 function changepage(p){
@@ -543,8 +546,8 @@ function calcrange(el){
 </head>
 <body>
 <div class="container" id="page-container">
-    <div id="ptitle" class="col-xs-12"><h1>IP Tools</h1></div>
-    <ul class="col-xs-12 nav nav-tabs">
+    <div id="ptitle" class="col-12"><h1>IP Tools</h1></div>
+    <ul class="col-12 nav nav-tabs justify-content-center">
         <li class="nav-item">
             <a class="nav-link" id="ipcidrbtn" onclick="changepage('ipcidr')">IP/CIDR</a>
         </li>
