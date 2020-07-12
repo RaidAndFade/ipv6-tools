@@ -25,7 +25,11 @@ module.exports = `<!doctype html>
     margin-bottom: 0px;
 }
 #page-container{
+    padding-top:20px;
     max-width:800px;
+}
+.nav-item{
+    cursor: pointer;
 }
 </style>
 <script>
