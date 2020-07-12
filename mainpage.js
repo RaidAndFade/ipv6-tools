@@ -241,6 +241,24 @@ function calcsubnetlist(el, changedCIDR){
     $("#inputsubscidr").toggleClass("is-invalid",!valid)
     $("#inputsubscidr").toggleClass("is-valid",valid)
 }
+
+
+function calcmbps(el, mbps_changed){
+    var mbps_val, gb_val, valid=true;
+    const mbps_to_gb = 86400*30.5/1000/8;
+
+    var changed_element = mbps_changed?$("#inputmbps-rate"):$("#inputmbps-gb")
+    var other_element =  mbps_changed?$("#inputmbps-gb"):$("#inputmbps-rate")
+
+    try{
+        var changed_val = parseInt(changed_element.val())
+        var other_val = changed_val*(mbps_changed?mbps_to_gb:1/mbps_to_gb)
+        other_element.val(other_val)
+    }catch(e){valid=false;}
+    
+    changed_element.toggleClass("is-invalid",!valid)
+    other_element.toggleClass("is-invalid",false)
+}
 </script>
 <style>{{bootstrapcss}}</style>
 <script>
@@ -539,7 +557,20 @@ function calcsubnetlist(el, changedCIDR){
         IPs to CIDRs is a Work In Progress...
     </div>
     <div id="mbpscalc" class="col-12 container justify-content-center ip-form">
-        MBPS to GB/mo Calculator is a Work In Progress...
+        <div class="row data-row">
+            <div class="input-group col-12 col-sm-6">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">mbps</span>
+                </div>
+                <input id="inputmbps-rate" type="text" class="form-control result-box" onkeyup='calcmbps(this,true)' aria-describedby="basic-addon1">
+            </div>
+            <div class="input-group col-12 col-sm-6">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">GB/mo</span>
+                </div>
+                <input id="inputmbps-gb" type="text" class="form-control result-box" onkeyup='calcmbps(this,false)' aria-describedby="basic-addon1">
+            </div>
+        </div>
     </div>
 </div>
 </div>
