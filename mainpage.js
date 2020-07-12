@@ -142,23 +142,7 @@ function calcnum(el){
         "Decimal": [(i)=>i.toString(10),/[0-9]+/],
         "Binary": [(i)=>"0b"+i.toString(2),/0b[01]+/],
         "Octal": [(i)=>"0o"+i.toString(8),/0o[0-7]+/],
-        "Address": [(i)=>{
-            if(i>max_ipv4){ //ipv6
-                var parts = [];
-                for(var j=0;j<8;j++){
-                    parts.push(i&BigInt(0xffff))
-                    i=i>>BigInt(16)
-                }
-                return new ipaddr.IPv6(parts.reverse()).toFixedLengthString()
-            }else{ //ipv4 OR ipv6 (but we only care about 4 in this range, since there are no useful 6s here atm)
-                var parts = [];
-                for(var j=0;j<4;j++){
-                    parts.push(i&BigInt(0xff))
-                    i=i>>BigInt(8)
-                }
-                return new ipaddr.IPv4(parts.reverse()).toFixedLengthString()
-            }
-        },null]
+        "Address": [(i)=>bigint2ip(i).toFixedLengthString(),null]
     }
     var input_type = null;
 
@@ -170,17 +154,7 @@ function calcnum(el){
         var ip = ipaddr.parse(val)
         var input_type = "Address";
 
-        var ipval = BigInt(0);
-
-        if(ip.kind()=="ipv4"){
-            for(var i=0;i<4;i++){
-                ipval = BigInt(ip.octets[i])+(ipval<<BigInt(8))
-            }
-        }else{
-            for(var i=0;i<8;i++){
-                ipval = BigInt(ip.parts[i])+(ipval<<BigInt(16))
-            }
-        }
+        var ipval = ip2bigint(ip);
     }catch(e){
         for(var type in possible_outputs){
             if(possible_outputs[type][1]!=null && possible_outputs[type][1].test(val)){
@@ -222,6 +196,50 @@ function calcnum(el){
 
     $("#inputnum").toggleClass("is-invalid",!valid)
     $("#inputnum").toggleClass("is-valid",valid)
+}
+
+function calcsubnetlist(el, changedCIDR){
+    var valid = true;
+
+    try{
+        var subnet = window.ipaddr.parseCIDR($("#inputsubscidr").val().trim())
+        var max_subs = subnet[0].kind()=="ipv4"?32:128;
+        if(!changedCIDR){
+        
+            var possiblesubs = [];
+
+            var optionshtml = "";
+            for(var i=subnet[1]+1;i<=max_subs;i++){
+                optionshtml += "<option value='"+i+"'>"+(BigInt(2)**BigInt(i-subnet[1]))+" Subnets (/"+i+")</option>"
+            }
+            var cidrselect = $("#inputsubssubnet").html(optionshtml);
+        }
+
+        var desired_sub = $("#inputsubssubnet").val()
+        
+        if(desired_sub != null && desired_sub > subnet[1] && desired_sub <= max_subs){
+            desired_sub = parseInt(desired_sub)
+            var html_out = "";
+            
+            var ipval = ip2bigint(subnet[0])
+
+            var permutations = BigInt(2)**BigInt(desired_sub-subnet[1])
+            var subnet_size = BigInt(2)**BigInt(max_subs-desired_sub)
+
+            var ipprefix = ipval-ipval%(BigInt(2)**BigInt(max_subs-subnet[1]))
+            for(var i=BigInt(0);i<permutations;i++){
+                var subnet = ipprefix + subnet_size*i;
+                html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet)+"/"+desired_sub+"'/>"
+            }
+
+            $("#subcalc-out").html(html_out);
+        }
+    }catch(e){
+        valid=false;
+    }
+
+    $("#inputsubscidr").toggleClass("is-invalid",!valid)
+    $("#inputsubscidr").toggleClass("is-valid",valid)
 }
 </script>
 <style>{{bootstrapcss}}</style>
@@ -272,6 +290,38 @@ function calcnum(el){
         }catch(e){return null;}
     }
 
+    function ip2bigint(ip){
+        var ipval = BigInt(0);
+        if(ip.kind()=="ipv4"){
+            for(var i=0;i<4;i++){
+                ipval = BigInt(ip.octets[i])+(ipval<<BigInt(8))
+            }
+        }else{
+            for(var i=0;i<8;i++){
+                ipval = BigInt(ip.parts[i])+(ipval<<BigInt(16))
+            }
+        }
+        return ipval;
+    }
+
+    function bigint2ip(num,kind=null){
+        var max_ipv4 = BigInt(2)**BigInt(32)-BigInt(1);
+        if(kind == "ipv6" || (kind==null && num>max_ipv4)){
+            var parts = [];
+            for(var j=0;j<8;j++){
+                parts.push(num&BigInt(0xffff))
+                num=num>>BigInt(16)
+            }
+            return new ipaddr.IPv6(parts.reverse())
+        }else{
+            var parts = [];
+            for(var j=0;j<4;j++){
+                parts.push(num&BigInt(0xff))
+                num=num>>BigInt(8)
+            }
+            return new ipaddr.IPv4(parts.reverse())
+        }
+    }
 
     {
         // Botch job #1, Remake the tostring and make them work.
@@ -380,13 +430,13 @@ function calcnum(el){
             <a class="nav-link" id="ntoabtn" onclick="changepage('ntoa')">IP-Numeric</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnet Calc (WIP)</a>
+            <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnet Calc</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('ip2cidr')">IPs to CIDRs (WIP)</a>
+            <a class="nav-link" id="subsbtn" onclick="changepage('ip2cidr')">IPs to CIDRs</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('mbpscalc')">mbps to GB/mo (WIP)</a>
+            <a class="nav-link" id="subsbtn" onclick="changepage('mbpscalc')">mbps to GB/mo</a>
         </li>
     </ul>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
@@ -463,12 +513,38 @@ function calcnum(el){
             </div>
         </div>
     </div>
+    <div id="subs" class="col-12 container justify-content-center ip-form">
+        <div class="row data-row">
+            <div class="input-group col-12 col-sm-6">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">CIDR Prefix</span>
+                </div>
+                <input id="inputsubscidr" type="text" class="form-control result-box" onkeyup='calcsubnetlist(this,false)' aria-describedby="basic-addon1">
+            </div>
+            <div class="input-group col-12 col-sm-6">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">Desired Subnets</span>
+                </div>
+                <select id="inputsubssubnet" class="form-control result-box" onchange='calcsubnetlist(this,true)' aria-describedby="basic-addon1"></select>
+            </div>
+        </div>
+        <div class="row data-row">
+            <div class="input-group inputGroup-sizing-sm col-12">
+                <label for="subcalc-out" id="ntoa-out3-label" class="result-box-label col-12">Possible Subnets:</label>
+                <div id="subcalc-out" class="col-12"></div>
+            </div>
+        </div>
+    </div>
+    <div id="ip2cidr" class="col-12 container justify-content-center ip-form">
+        IPs to CIDRs is a Work In Progress...
+    </div>
+    <div id="mbpscalc" class="col-12 container justify-content-center ip-form">
+        MBPS to GB/mo Calculator is a Work In Progress...
+    </div>
 </div>
 </div>
 <script>
-(function(){
-    changepage("ipcidr");
-})();
+changepage("ipcidr");
 </script>
 </body>
 </html>
