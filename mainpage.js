@@ -62,7 +62,11 @@ function loadHash(){
         var hashval = JSON.parse(atob(window.location.hash.slice(1)))
         window.curdetails = hashval;
     }
-    changepage(window.curdetails['page'],false)
+    window.firstload = true
+    try{
+        changepage(window.curdetails['page'],false)
+    }catch(e){}
+    window.firstload = false
 }
 
 function updateHash(){
@@ -72,14 +76,17 @@ function updateHash(){
 
 function getInputVal(i){
     var v = $(i).val().trim()
-    if(i in window.curdetails['vals'] && (v == "" || v == null || v == undefined)){
+    if(window.firstload && i in window.curdetails['vals']){
         v = window.curdetails['vals'][i]
         $(i).val(v)
     }
-    window.curdetails['vals'][i]=v
-    updateHash();
 
     return v;
+}
+
+function saveInputVal(i,v,update=true){
+    window.curdetails['vals'][i]=v
+    if(update)updateHash();
 }
 
 window.curdetails = {
@@ -107,8 +114,9 @@ function getCIDRFromInput(i){
     }
 }
 
-function calccidr(el){
-    var curval = getCIDRFromInput(getInputVal("#inputcidr"))
+function calccidr(el,firstload=false){
+    var curvaltxt = getInputVal("#inputcidr")
+    var curval = getCIDRFromInput(curvaltxt)
 
     $("#inputcidr").toggleClass("is-invalid",curval==null && curval != "")
     $("#inputcidr").toggleClass("is-valid",curval!=null)
@@ -138,6 +146,7 @@ function calccidr(el){
             $("#ipcidr-first").val(first.toFixedLengthString())
             $("#ipcidr-last").val(last.toFixedLengthString())
         }
+        saveInputVal("#inputcidr",curvaltxt)
     }else{
         $("#ipcidr-extra1").val("")
         $("#ipcidr-first").val("")
@@ -166,6 +175,8 @@ function calcrdns(el){
             valid=false;
         }
     }
+    if(valid) 
+        saveInputVal("#inputrdns",val)
 
     $("#rdns-res-label").text(label)
     $("#rdns-res").val(result)
@@ -221,6 +232,8 @@ function calcnum(el){
             }catch(e){
                 valid=false;
             }
+        }else{
+            valid=false;
         }
     }
     
@@ -234,6 +247,7 @@ function calcnum(el){
             $("#ntoa-out"+cur_out).val(possible_outputs[x][0](ipval))
             cur_out += 1
         }
+        saveInputVal("#inputnum",val)
     }else{
         for(var i=1;i<=4;i++){
             $("#ntoa-out"+i+"-label").text("Output:")
@@ -249,7 +263,8 @@ function calcsubnetlist(el, changedCIDR){
     var valid = true;
 
     try{
-        var subnet = window.ipaddr.parseCIDR(getInputVal("#inputsubscidr"))
+        var subnettxt = getInputVal("#inputsubscidr")
+        var subnet = window.ipaddr.parseCIDR(subnettxt)
         var max_subs = subnet[0].kind()=="ipv4"?32:128;
         if(!changedCIDR){
         
@@ -284,7 +299,9 @@ function calcsubnetlist(el, changedCIDR){
                 html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet_val,subnet[0].kind())+"/"+desired_sub+"'/>"
             }
 
-            $("#subcalc-out").html(html_out);
+            $("#subcalc-out").html(html_out)
+            saveInputVal("#inputsubscidr",subnettxt)
+            saveInputVal("#inputsubssubnet",desired_sub)
         }
     }catch(e){
         valid=false;
@@ -294,21 +311,29 @@ function calcsubnetlist(el, changedCIDR){
     $("#inputsubscidr").toggleClass("is-valid",valid)
 }
 
-function calcmbps(el, mbps_changed){
+function calcmbps(el, mbps_changed=null){
     var mbps_val, gb_val, valid=true;
     const mbps_to_gb = 86400*30.5/1000/8;
 
-    var changed_element = mbps_changed?$("#inputmbps-rate"):$("#inputmbps-gb")
-    var other_element =  mbps_changed?$("#inputmbps-gb"):$("#inputmbps-rate")
+    if(mbps_changed == null)mbps_changed=getInputVal("last_change")
+
+    var changed_element = mbps_changed?"#inputmbps-rate":"#inputmbps-gb"
+    var other_element =  mbps_changed?"#inputmbps-gb":"#inputmbps-rate"
 
     try{
-        var changed_val = parseInt(changed_element.val())
-        var other_val = changed_val*(mbps_changed?mbps_to_gb:1/mbps_to_gb)
-        other_element.val(other_val)
+        var changed_val = parseInt(getInputVal(changed_element))
+        if(!isNaN(changed_val) && isFinite(changed_val)){
+            var other_val = changed_val*(mbps_changed?mbps_to_gb:1/mbps_to_gb)
+            $(other_element).val(other_val)
+            saveInputVal(changed_element,changed_val,false)
+            saveInputVal("last_change",mbps_changed)
+        }else{
+            valid=false;
+        }
     }catch(e){valid=false;}
     
-    changed_element.toggleClass("is-invalid",!valid)
-    other_element.toggleClass("is-invalid",false)
+    $(changed_element).toggleClass("is-invalid",!valid)
+    $(other_element).toggleClass("is-invalid",false)
 }
 
 var net_sizes = {"ipv4":{},"ipv6":{}};
@@ -321,13 +346,15 @@ for(var i=128;i>=0;i--){
 
 
 function calcrange(el){
-    var firstip,lastip,html_out="";
+    var firstip,firstiptxt,lastip,lastiptxt,html_out="";
     var firstvalid=true,lastvalid=true;
     try{
-        firstip=window.ipaddr.parse(getInputVal("#inputcidr-firstip"))
+        firstiptxt = getInputVal("#inputcidr-firstip")
+        firstip=window.ipaddr.parse(firstiptxt)
     }catch(e){firstvalid=false;}
     try{
-        lastip=window.ipaddr.parse(getInputVal("#inputcidr-lastip"))
+        lastiptxt = getInputVal("#inputcidr-lastip")
+        lastip=window.ipaddr.parse(lastiptxt)
     }catch(e){lastvalid=false;}
 
     if(firstvalid && lastvalid){
@@ -358,6 +385,8 @@ function calcrange(el){
                 }
                 html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(net[0],firstip.kind()).toFixedLengthString()+"/"+net[1]+"'/>"
             }
+            saveInputVal("#inputcidr-firstip",firstiptxt)
+            saveInputVal("#inputcidr-lastip",lastiptxt)
         }else{
             firstvalid = false
             lastvalid = false;
@@ -735,9 +764,9 @@ function calcrange(el){
             </div>
             <div class="input-group col-12 col-sm-6">
                 <div class="input-group-prepend">
-                <span class="input-group-text result-box" id="basic-addon1">GB/mo</span>
+                <span class="input-group-text result-box" id="basic-addon2">GB/mo</span>
                 </div>
-                <input id="inputmbps-gb" type="text" class="form-control result-box" onkeyup='calcmbps(this,false)' aria-describedby="basic-addon1">
+                <input id="inputmbps-gb" type="text" class="form-control result-box" onkeyup='calcmbps(this,false)' aria-describedby="basic-addon2">
             </div>
         </div>
     </div>
@@ -745,6 +774,9 @@ function calcrange(el){
 </div>
 <script>
 loadHash()
+window.onhashchange = function(){
+    loadHash()
+}
 </script>
 </body>
 </html>
