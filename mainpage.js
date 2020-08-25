@@ -315,7 +315,8 @@ function calcmbps(el, mbps_changed=null){
     var mbps_val, gb_val, valid=true;
     const mbps_to_gb = 86400*30.5/1000/8;
 
-    if(mbps_changed == null)mbps_changed=getInputVal("last_change")
+    if(mbps_changed == null && "last_change" in window.curdetails['vals'])
+        mbps_changed=window.curdetails['vals']["last_change"]
 
     var changed_element = mbps_changed?"#inputmbps-rate":"#inputmbps-gb"
     var other_element =  mbps_changed?"#inputmbps-gb":"#inputmbps-rate"
@@ -326,7 +327,8 @@ function calcmbps(el, mbps_changed=null){
             var other_val = changed_val*(mbps_changed?mbps_to_gb:1/mbps_to_gb)
             $(other_element).val(other_val)
             saveInputVal(changed_element,changed_val,false)
-            saveInputVal("last_change",mbps_changed)
+            window.curdetails['vals']["last_change"]=mbps_changed
+            updateHash()
         }else{
             valid=false;
         }
