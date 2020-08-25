@@ -36,14 +36,56 @@ module.exports = `<!doctype html>
 }
 </style>
 <script>
-function changepage(p){
+function changepage(p,cleardetails=true){
     $(".nav-link").toggleClass("active",false)
     $("#"+p+"btn").toggleClass("active",true);
     $(".ip-form").hide();
     $("#"+p).show();
+
+    pagefuncs = {
+        "ipcidr":calccidr,
+        "rdns":calcrdns,
+        "ntoa":calcnum,
+        "subs":calcsubnetlist,
+        "ip2cidr":calcrange,
+        "mbpscalc":calcmbps
+    }
+    if(p in pagefuncs){
+        if(cleardetails) window.curdetails = {page:p,vals:{}}
+        pagefuncs[p](null)
+        updateHash()
+    }
 }
 
-window.curval = null;
+function loadHash(){
+    if(window.location.hash){
+        var hashval = JSON.parse(atob(window.location.hash.slice(1)))
+        window.curdetails = hashval;
+    }
+    changepage(window.curdetails['page'],false)
+}
+
+function updateHash(){
+    var hashval = btoa(JSON.stringify(window.curdetails))
+    window.location.hash = hashval
+}
+
+function getInputVal(i){
+    var v = $(i).val().trim()
+    if(i in window.curdetails['vals'] && (v == "" || v == null || v == undefined)){
+        v = window.curdetails['vals'][i]
+        $(i).val(v)
+    }
+    window.curdetails['vals'][i]=v
+    updateHash();
+
+    return v;
+}
+
+window.curdetails = {
+    page:"ipcidr",
+    vals:{"#inputcidr":"1.1.1.0/24"}
+};
 
 function getClassFromKind(kind){
     if(kind == "ipv4") return window.ipaddr.IPv4;
@@ -66,32 +108,30 @@ function getCIDRFromInput(i){
 }
 
 function calccidr(el){
-    if(el.id == "inputcidr"){ // they changed the entire input. ez
-        window.curval = getCIDRFromInput($("#inputcidr").val().trim())
-    }
+    var curval = getCIDRFromInput(getInputVal("#inputcidr"))
 
-    $("#inputcidr").toggleClass("is-invalid",window.curval==null && $("#inputcidr").val() != "")
-    $("#inputcidr").toggleClass("is-valid",window.curval!=null)
+    $("#inputcidr").toggleClass("is-invalid",curval==null && curval != "")
+    $("#inputcidr").toggleClass("is-valid",curval!=null)
 
-    if(window.curval != null){
-        var cl = getClassFromKind(window.curval[1])
-        if(window.curval[1] == "ipv6"){
-            var first = cl.firstUsableAddressFromCIDR(window.curval[0]);
-            var last = cl.lastUsableAddressFromCIDR(window.curval[0]);
+    if(curval != null){
+        var cl = getClassFromKind(curval[1])
+        if(curval[1] == "ipv6"){
+            var first = cl.firstUsableAddressFromCIDR(curval[0]);
+            var last = cl.lastUsableAddressFromCIDR(curval[0]);
             $("#ipcidr-first").val(first.toFixedLengthString())
             $("#ipcidr-last").val(last.toFixedLengthString())
             $("#ipcidr-extra1-label").text("Short")
-            $("#ipcidr-extra1").val(first.toString() + "/" + window.curval[2][1])
+            $("#ipcidr-extra1").val(first.toString() + "/" + curval[2][1])
             $("#ipcidr-extra2-label").text("Long")
-            $("#ipcidr-extra2").val(first.toFixedLengthString() + "/" + window.curval[2][1])
+            $("#ipcidr-extra2").val(first.toFixedLengthString() + "/" + curval[2][1])
         }else{
-            var net = first = cl.networkAddressFromCIDR(window.curval[0]);
-            var brd = last = cl.broadcastAddressFromCIDR(window.curval[0]);
+            var net = first = cl.networkAddressFromCIDR(curval[0]);
+            var brd = last = cl.broadcastAddressFromCIDR(curval[0]);
             $("#ipcidr-extra1-label").text("Network")
             $("#ipcidr-extra1").val(net.toFixedLengthString())
             $("#ipcidr-extra2-label").text("Broadcast")
             $("#ipcidr-extra2").val(brd.toFixedLengthString())
-            if(window.curval[2][1] < 31){
+            if(curval[2][1] < 31){
                 first.octets[3] += 1;
                 last.octets[3] -= 1;
             }
@@ -107,7 +147,7 @@ function calccidr(el){
 }
 
 function calcrdns(el){
-    var val = $("#inputrdns").val().trim()
+    var val = getInputVal("#inputrdns")// $("#inputrdns").val().trim()
 
     var a2i_val = arpa2ip(val);
     var valid = true;
@@ -134,7 +174,7 @@ function calcrdns(el){
 }
 
 function calcnum(el){
-    var val = $("#inputnum").val().trim()
+    var val = getInputVal("#inputnum") //$("#inputnum").val().trim()
 
     var outlabels = [];
     var outvalues = [];
@@ -209,7 +249,7 @@ function calcsubnetlist(el, changedCIDR){
     var valid = true;
 
     try{
-        var subnet = window.ipaddr.parseCIDR($("#inputsubscidr").val().trim())
+        var subnet = window.ipaddr.parseCIDR(getInputVal("#inputsubscidr"))
         var max_subs = subnet[0].kind()=="ipv4"?32:128;
         if(!changedCIDR){
         
@@ -223,7 +263,7 @@ function calcsubnetlist(el, changedCIDR){
             var cidrselect = $("#inputsubssubnet").html(optionshtml);
         }
 
-        var desired_sub = $("#inputsubssubnet").val()
+        var desired_sub = getInputVal("#inputsubssubnet") // $("#inputsubssubnet").val()
         
         if(desired_sub != null && desired_sub > subnet[1] && desired_sub <= max_subs){
             desired_sub = parseInt(desired_sub)
@@ -284,10 +324,10 @@ function calcrange(el){
     var firstip,lastip,html_out="";
     var firstvalid=true,lastvalid=true;
     try{
-        firstip=window.ipaddr.parse($("#inputcidr-firstip").val().trim())
+        firstip=window.ipaddr.parse(getInputVal("#inputcidr-firstip"))
     }catch(e){firstvalid=false;}
     try{
-        lastip=window.ipaddr.parse($("#inputcidr-lastip").val().trim())
+        lastip=window.ipaddr.parse(getInputVal("#inputcidr-lastip"))
     }catch(e){lastvalid=false;}
 
     if(firstvalid && lastvalid){
@@ -704,7 +744,7 @@ function calcrange(el){
 </div>
 </div>
 <script>
-changepage("ipcidr");
+loadHash()
 </script>
 </body>
 </html>
