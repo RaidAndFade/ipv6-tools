@@ -422,7 +422,11 @@ function calcrange(el){
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'UA-86131150-6');
+  gtag('config', 'UA-86131150-6', {
+  'linker': {
+    'domains': ['ipv6.tools', 'ipv4.tools']
+  }
+});
 </script>
 <script>
     navigator.serviceWorker.register("swcacher.sw.js",{"updateViaCache":"all"})
