@@ -36,24 +36,30 @@ module.exports = `<!doctype html>
 }
 </style>
 <script>
-function changepage(p,cleardetails=true){
+const pagefuncs = {
+    "ipcidr":calccidr,
+    "rdns":calcrdns,
+    "ntoa":calcnum,
+    "subs":calcsubnetlist,
+    "ip2cidr":calcrange,
+    "mbpscalc":calcmbps
+}
+function gotopage(p){
+    if(p in pagefuncs){
+        window.curdetails = {page:p,vals:{}}
+        updateHash()
+    }
+}
+function changepage(p){
     $(".nav-link").toggleClass("active",false)
     $("#"+p+"btn").toggleClass("active",true);
     $(".ip-form").hide();
     $("#"+p).show();
 
-    pagefuncs = {
-        "ipcidr":calccidr,
-        "rdns":calcrdns,
-        "ntoa":calcnum,
-        "subs":calcsubnetlist,
-        "ip2cidr":calcrange,
-        "mbpscalc":calcmbps
-    }
+    gtag('config', 'UA-86131150-6', { "page_path": "#"+p });
+
     if(p in pagefuncs){
-        if(cleardetails) window.curdetails = {page:p,vals:{}}
         pagefuncs[p](null)
-        updateHash()
     }
 }
 
@@ -64,7 +70,7 @@ function loadHash(){
     }
     window.firstload = true
     try{
-        changepage(window.curdetails['page'],false)
+        changepage(window.curdetails['page'])
     }catch(e){}
     window.firstload = false
 }
@@ -422,11 +428,10 @@ function calcrange(el){
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'UA-86131150-6', {
-  'linker': {
-    'domains': ['ipv6.tools', 'ipv4.tools']
-  }
-});
+  gtag('config', 'UA-86131150-6', {  
+      'linker': { 'domains': ['ipv6.tools', 'ipv4.tools'] },
+      "send_page_view": false
+    });
 </script>
 <script>
     navigator.serviceWorker.register("swcacher.sw.js",{"updateViaCache":"all"})
@@ -633,22 +638,22 @@ function calcrange(el){
     <div id="ptitle" class="col-12"><h1>IP Tools</h1></div>
     <ul class="col-12 nav nav-tabs justify-content-center">
         <li class="nav-item">
-            <a class="nav-link" id="ipcidrbtn" onclick="changepage('ipcidr')">IP/CIDR</a>
+            <a class="nav-link" id="ipcidrbtn" onclick="gotopage('ipcidr')">IP/CIDR</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="rdnsbtn" onclick="changepage('rdns')">rDNS</a>
+            <a class="nav-link" id="rdnsbtn" onclick="gotopage('rdns')">rDNS</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="ntoabtn" onclick="changepage('ntoa')">IP-Numeric</a>
+            <a class="nav-link" id="ntoabtn" onclick="gotopage('ntoa')">IP-Numeric</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="changepage('subs')">Subnet Calc</a>
+            <a class="nav-link" id="subsbtn" onclick="gotopage('subs')">Subnet Calc</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="ip2cidrbtn" onclick="changepage('ip2cidr')">IPs to CIDRs</a>
+            <a class="nav-link" id="ip2cidrbtn" onclick="gotopage('ip2cidr')">IPs to CIDRs</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="mbpscalcbtn" onclick="changepage('mbpscalc')">mbps to GB/mo</a>
+            <a class="nav-link" id="mbpscalcbtn" onclick="gotopage('mbpscalc')">mbps to GB/mo</a>
         </li>
     </ul>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
