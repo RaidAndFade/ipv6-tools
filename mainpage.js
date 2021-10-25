@@ -499,7 +499,7 @@ function calcrange(el){
             var ip = ipaddr.parse(ip)
             if(ip != null){
                 if(ip.kind() == "ipv4"){
-                    return ip.toString().split(".").reverse().join(".")+".ip-addr.arpa";
+                    return ip.toString().split(".").reverse().join(".")+".in-addr.arpa";
                 }else{
                     return ip.toFixedLengthString().replace(/:/g,"").split("").reverse().join(".")+".ip6.arpa";
                 }
