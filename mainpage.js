@@ -26,13 +26,22 @@ module.exports = `<!doctype html>
 }
 #page-container{
     padding-top:20px;
-    max-width:800px;
 }
 .nav-item{
     cursor: pointer;
 }
 #ptitle {
     text-align: center;
+}
+.subtbl-split{
+    background-color: #f0f6fb;
+}
+.subtbl-clickable{
+    cursor: pointer;
+}
+.subtbl-clickable:hover{
+    cursor: pointer;
+    background-color: #fafbf2;
 }
 </style>
 <script>
@@ -41,6 +50,7 @@ const pagefuncs = {
     "rdns":calcrdns,
     "ntoa":calcnum,
     "subs":calcsubnetlist,
+    "subtbl":calcsubnettable,
     "ip2cidr":calcrange,
     "mbpscalc":calcmbps
 }
@@ -62,7 +72,6 @@ function changepage(p){
         pagefuncs[p](null)
     }
 }
-
 function loadHash(){
     if(window.location.hash){
         var hashval = JSON.parse(atob(window.location.hash.slice(1)))
@@ -74,7 +83,6 @@ function loadHash(){
     }catch(e){}
     window.firstload = false
 }
-
 function updateHash(){
     var hashval = btoa(JSON.stringify(window.curdetails))
     window.location.hash = hashval
@@ -263,6 +271,168 @@ function calcnum(el){
 
     $("#inputnum").toggleClass("is-invalid",!valid)
     $("#inputnum").toggleClass("is-valid",valid)
+}
+
+function splittblleaf(id,el){
+    var subnettxt = getInputVal("#inputsubtblcidr")
+    try{
+        var subnet = window.ipaddr.parseCIDR(subnettxt)
+        var max_subs = subnet[0].kind()=="ipv4"?32:128;
+        console.log(id);
+        if(bigint_log2(id)+1+subnet[1]<=max_subs){
+            window.subtblbreakdown.push(id);
+            calcsubnettable(null);
+        }
+    }catch(e){}
+}
+
+function mergetblleaf(id,el){
+    console.log(id);
+    window.subtblbreakdown.splice(window.subtblbreakdown.indexOf(id),1);
+    calcsubnettable(null);
+}
+
+function clearsubnettable(){
+    window.subtblbreakdown=[];
+    calcsubnettable(null);
+}
+
+function calcsubnettable(el){
+    const show_only_most_specific = true;
+
+    var subnettxt = getInputVal("#inputsubtblcidr")
+    try{
+        var subnet = window.ipaddr.parseCIDR(subnettxt)
+    }catch(e){
+        $("#inputsubtblcidr").toggleClass("is-invalid",true)
+        $("#inputsubtblcidr").toggleClass("is-valid",false)
+        return;
+    }
+    $("#inputsubtblcidr").toggleClass("is-invalid",false)
+    $("#inputsubtblcidr").toggleClass("is-valid",true)
+
+    var max_subs = subnet[0].kind()=="ipv4"?32:128;
+
+    if(!window.subtblbreakdown){
+        window.subtblbreakdown=window.curdetails['subtbl']||[];
+    }
+
+    var tblbreakdown = window.subtblbreakdown;
+    if(curdetails['tbldata'])
+        tblbreakdown = curdetails['tbldata']
+    
+    var output = [];
+    var merges = [];
+    var tobreak = [1];
+    var maxdepth = 0;
+    while(tobreak.length>0){
+        var breaking = tobreak.pop()
+        var cursubdepth = bigint_log2(breaking)
+
+        if(subnet[1]+cursubdepth>max_subs) continue;
+        
+        if(cursubdepth > maxdepth) maxdepth = cursubdepth;
+
+        if(tblbreakdown.indexOf(breaking)<0){
+            output.push([cursubdepth,breaking]);
+        }else{
+            var leftleaf = (breaking<<1)
+            var rightleaf = (breaking<<1)+1
+            
+            tobreak.push(rightleaf)
+            tobreak.push(leftleaf)
+        }
+    }
+
+    var outtable = $("<table>").addClass("table table-bordered table-hover table-sm");
+
+    emptycells = [];
+    leafrowmap = {};
+    rows = {};
+    cur_ip_count = BigInt(0);
+    var rowlens = {}
+    for(var y=0;y<output.length;y++){
+        var row = $("<tr>");
+        rows[y] = row;
+        outtable.append(row);
+        var treeval = output[y];
+
+        emptycells.push(treeval[1])
+        leafrowmap[treeval[1]] = y;
+        rowlens[treeval[1]] = 1
+
+        new_subnet = subnet[1]+treeval[0]
+        leaftext = "";
+
+        leaftext += bigint2ip(ip2bigint(subnet[0]) + cur_ip_count)+"/"+(new_subnet);
+
+        cur_ip_count += BigInt(2)<<BigInt(max_subs-new_subnet-1)
+
+        var leafcell = $("<td>")
+            .text(leaftext)
+            .attr("colspan",maxdepth-treeval[0]+1)
+            .toggleClass("subtbl-expanded",true)
+            .toggleClass("subtbl-clickable",true)
+            .click(splittblleaf.bind(null,treeval[1]))
+            
+        row.append(leafcell)
+    }
+
+
+    while(emptycells.length>0){
+        var leafid = Math.max(...emptycells)
+
+        emptycells.splice(emptycells.indexOf(leafid),1)
+
+        var leafrow = leafrowmap[leafid]
+
+        if(!leafrow) continue;
+
+        if(leafrowmap[leafid-1] == leafrow-rowlens[leafid-1]){
+            var leaflen = rowlens[leafid-1]
+            var rowlen = rowlens[leafid-1] + rowlens[leafid]
+
+            delete leafrowmap[leafid];
+            delete leafrowmap[leafid-1];
+
+            var depth = bigint_log2(leafid)-1
+
+            var cell = $("<td>")
+                .text("/"+(subnet[1]+depth))
+                .attr("rowspan",rowlen)
+                .toggleClass("subtbl-split",true)
+                
+            if(rowlen == 2){
+                cell.click(mergetblleaf.bind(null,leafid>>1))
+                .toggleClass("subtbl-clickable",true)
+            }
+            rows[leafrow-leaflen].prepend(cell)
+            leafrowmap[leafid>>1] = leafrow-leaflen;
+            rowlens[leafid>>1] = rowlen
+            emptycells.push(leafid>>1)
+        }
+    }
+
+/*        for(var x=maxdepth;x>0;x--){
+            if(x==treeval[0]){
+                var cell = $("<td>").text(treeval[1]+":"+(subnet[1]+treeval[0]))
+                row.prepend(cell)
+                if(x<maxdepth){
+                    cell.attr("colspan",maxdepth-x+1)
+                }
+            }else{
+                var cell = $("<td>").text(treeval[1]+"{"+x+","+y+"}")
+                row.prepend(cell)
+                emptycells.push(treeval[1])
+            }
+        }*/
+
+    $("#subtblcontainer").empty();
+    $("#subtblcontainer").append(outtable);
+
+    window.curdetails['subtbl']=window.subtblbreakdown;
+    // this calls updatehash, otherwise we would have to manually
+    saveInputVal("#inputsubtblcidr",subnettxt)
 }
 
 function calcsubnetlist(el, changedCIDR){
@@ -650,6 +820,9 @@ function calcrange(el){
             <a class="nav-link" id="subsbtn" onclick="gotopage('subs')">Subnet Calc</a>
         </li>
         <li class="nav-item">
+            <a class="nav-link" id="subtblbtn" onclick="gotopage('subtbl')">Subnet Table</a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" id="ip2cidrbtn" onclick="gotopage('ip2cidr')">IPs to CIDRs</a>
         </li>
         <li class="nav-item">
@@ -750,6 +923,22 @@ function calcrange(el){
                 <label for="subcalc-out" class="result-box-label col-12">Possible Subnets:</label>
                 <div id="subcalc-out" class="col-12"></div>
             </div>
+        </div>
+    </div>
+    <div id="subtbl" class="col-12 container justify-content-center ip-form">
+        <div class="row data-row">
+            <div class="input-group col-9">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">CIDR Prefix</span>
+                </div>
+                <input id="inputsubtblcidr" type="text" class="form-control result-box" onkeyup='calcsubnettable(this)' aria-describedby="basic-addon1">
+            </div>
+            <div class="input-group col-3">
+                <button class="btn btn-secondary btn-sm col-12" onclick='clearsubnettable()'>Reset</button>
+            </div>
+        </div>
+        <div id="subtblcontainer" class="row data-row px-3 mt-2">
+            
         </div>
     </div>
     <div id="ip2cidr" class="col-12 container justify-content-center ip-form">
