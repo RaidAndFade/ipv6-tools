@@ -308,10 +308,10 @@ function splittblleaf(id,el){
     var subnettxt = getInputVal("#inputsubtblcidr")
     try{
         var subnet = window.ipaddr.parseCIDR(subnettxt)
-        var max_subs = subnet[0].kind()=="ipv4"?32:128;
+        var max_subs = subnet[0].kind()=="ipv4"?32n:128n;
         console.log(id);
-        if(bigint_log2(id)+1+subnet[1]<=max_subs){
-            window.subtblbreakdown.push(id);
+        if(bigint_log2(id)+1+subnet[1]<=max_subs && bigint_log2(id)>=0 && id>=0 ){
+            window.subtblbreakdown.push(id.toString());
             calcsubnettable(null);
         }
     }catch(e){}
@@ -342,7 +342,7 @@ function calcsubnettable(el){
     $("#inputsubtblcidr").toggleClass("is-invalid",false)
     $("#inputsubtblcidr").toggleClass("is-valid",true)
 
-    var max_subs = subnet[0].kind()=="ipv4"?32:128;
+    var max_subs = subnet[0].kind()=="ipv4"?32n:128n;
 
     if(!window.subtblbreakdown){
         window.subtblbreakdown=window.curdetails['subtbl']||[];
@@ -354,21 +354,24 @@ function calcsubnettable(el){
     
     var output = [];
     var merges = [];
-    var tobreak = [1];
-    var maxdepth = 0;
+    var tobreak = [1n];
+    var maxdepth = 0n;
+    var sub_cidr = BigInt(subnet[1])
     while(tobreak.length>0){
         var breaking = tobreak.pop()
-        var cursubdepth = bigint_log2(breaking)
+        var cursubdepth = BigInt(bigint_log2(breaking))
 
-        if(subnet[1]+cursubdepth>max_subs) continue;
+        if(breaking<0) continue;
+
+        if(sub_cidr+cursubdepth>max_subs || cursubdepth<0) continue;
         
         if(cursubdepth > maxdepth) maxdepth = cursubdepth;
 
-        if(tblbreakdown.indexOf(breaking)<0){
+        if(tblbreakdown.indexOf(breaking+"")<0){
             output.push([cursubdepth,breaking]);
         }else{
-            var leftleaf = (breaking<<1)
-            var rightleaf = (breaking<<1)+1
+            var leftleaf = (breaking<<1n)
+            var rightleaf = (breaking<<1n)+1n
             
             tobreak.push(rightleaf)
             tobreak.push(leftleaf)
@@ -382,6 +385,14 @@ function calcsubnettable(el){
     rows = {};
     cur_ip_count = BigInt(0);
     var rowlens = {}
+
+    var cl = getClassFromKind(subnet[0].kind())
+
+    if(subnet[0].kind()=="ipv4")
+        first_ip = cl.networkAddressFromCIDR(subnettxt)
+    else
+        first_ip = cl.firstUsableAddressFromCIDR(subnettxt)
+
     for(var y=0;y<output.length;y++){
         var row = $("<tr>");
         rows[y] = row;
@@ -392,16 +403,22 @@ function calcsubnettable(el){
         leafrowmap[treeval[1]] = y;
         rowlens[treeval[1]] = 1
 
-        new_subnet = subnet[1]+treeval[0]
+        new_subnet_cidr = sub_cidr+treeval[0]
         leaftext = "";
 
-        leaftext += bigint2ip(ip2bigint(subnet[0]) + cur_ip_count)+"/"+(new_subnet);
+        new_subnet = bigint2ip(ip2bigint(first_ip) + cur_ip_count,first_ip.kind())
 
-        cur_ip_count += BigInt(2)<<BigInt(max_subs-new_subnet-1)
+        if(new_subnet.kind() != first_ip.kind()){
+            break
+        }
+
+        leaftext += new_subnet+"/"+(new_subnet_cidr);
+
+        cur_ip_count += BigInt(2)<<BigInt(max_subs-new_subnet_cidr-1n)
 
         var leafcell = $("<td>")
             .text(leaftext)
-            .attr("colspan",maxdepth-treeval[0]+1)
+            .attr("colspan",maxdepth-treeval[0]+1n)
             .toggleClass("subtbl-expanded",true)
             .toggleClass("subtbl-clickable",true)
             .click(splittblleaf.bind(null,treeval[1]))
@@ -411,7 +428,11 @@ function calcsubnettable(el){
 
 
     while(emptycells.length>0){
-        var leafid = Math.max(...emptycells)
+        var leafid = -1n;
+        for(i=0;i<emptycells.length;i++){
+            if(emptycells[i]>leafid)leafid=emptycells[i];
+        }
+        if(leafid==-1)break;
 
         emptycells.splice(emptycells.indexOf(leafid),1)
 
@@ -419,28 +440,28 @@ function calcsubnettable(el){
 
         if(!leafrow) continue;
 
-        if(leafrowmap[leafid-1] == leafrow-rowlens[leafid-1]){
-            var leaflen = rowlens[leafid-1]
-            var rowlen = rowlens[leafid-1] + rowlens[leafid]
+        if(leafrowmap[leafid-1n] == leafrow-rowlens[leafid-1n]){
+            var leaflen = rowlens[leafid-1n]
+            var rowlen = rowlens[leafid-1n] + rowlens[leafid]
 
             delete leafrowmap[leafid];
-            delete leafrowmap[leafid-1];
+            delete leafrowmap[leafid-1n];
 
-            var depth = bigint_log2(leafid)-1
+            var depth = BigInt(bigint_log2(leafid))-1n
 
             var cell = $("<td>")
-                .text("/"+(subnet[1]+depth))
+                .text("/"+(sub_cidr+depth))
                 .attr("rowspan",rowlen)
                 .toggleClass("subtbl-split",true)
                 
             if(rowlen == 2){
-                cell.click(mergetblleaf.bind(null,leafid>>1))
+                cell.click(mergetblleaf.bind(null,leafid>>1n))
                 .toggleClass("subtbl-clickable",true)
             }
             rows[leafrow-leaflen].prepend(cell)
-            leafrowmap[leafid>>1] = leafrow-leaflen;
-            rowlens[leafid>>1] = rowlen
-            emptycells.push(leafid>>1)
+            leafrowmap[leafid>>1n] = leafrow-leaflen;
+            rowlens[leafid>>1n] = rowlen
+            emptycells.push(leafid>>1n)
         }
     }
 
