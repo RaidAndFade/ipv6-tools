@@ -52,7 +52,8 @@ const pagefuncs = {
     "subs":calcsubnetlist,
     "subtbl":calcsubnettable,
     "ip2cidr":calcrange,
-    "mbpscalc":calcmbps
+    "mbpscalc":calcmbps,
+    'about':()=>{}
 }
 function gotopage(p){
     if(p in pagefuncs){
@@ -113,16 +114,38 @@ function getClassFromKind(kind){
     else return window.ipaddr.IPv6
 }
 
+function netmask_ip_to_cidr(i){
+    var binary_repr = ip2bigint(i).toString(2)
+
+    var lastonepos = binary_repr.lastIndexOf("1")
+    var firstzeropos = binary_repr.indexOf("0")
+
+    if((binary_repr.length==32 || binary_repr.length==128) && (lastonepos < firstzeropos || firstzeropos==-1 || lastonepos==-1)){
+        return lastonepos+1;
+    }
+    return null;
+}
+
 function getCIDRFromInput(i){
     try{
         c = window.ipaddr.parseCIDR(i)
-        return [i, c[0].kind(), c]
+        return [i, c[0].kind(), c, true]
     }catch(e){
         try{
-            ip = window.ipaddr.process(i) 
-            if(ip.kind()=="ipv4") return [i+"/32", "ipv4", window.ipaddr.parseCIDR(i+"/32")]
-            else return [i+"/128", "ipv6", window.ipaddr.parseCIDR(i+"/128")]
+            if(i.indexOf("/")>=0){
+                ip = window.ipaddr.process(i.split("/")[0]) 
+                netmask=window.ipaddr.process(i.split("/")[1])
+                if(ip.kind() != netmask.kind()) return null;
+                i=i.split("/")[0];
+            }else{
+                ip = window.ipaddr.process(i) 
+                netmask = window.ipaddr.process(ip.kind()=="ipv4"?"255.255.255.255":"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+            }
+            nm_cidr = netmask_ip_to_cidr(netmask)
+            if(nm_cidr==null) return null;
+            return [i+"/"+nm_cidr, ip.kind(), window.ipaddr.parseCIDR(i+"/"+nm_cidr),false]
         }catch(e){
+            console.log(e)
             return null;
         }
     }
@@ -146,6 +169,9 @@ function calccidr(el,firstload=false){
             $("#ipcidr-extra1").val(first.toString() + "/" + curval[2][1])
             $("#ipcidr-extra2-label").text("Long")
             $("#ipcidr-extra2").val(first.toFixedLengthString() + "/" + curval[2][1])
+
+            $("#ipcidr-extra3-label").text(curval[3]?"Netmask":"CIDR")
+            $("#ipcidr-extra3").val(curval[3]?bigint2ip(BigInt("0b"+"1".repeat(curval[2][1])+"0".repeat(128-curval[2][1]))).toFixedLengthString():curval[2][1])
         }else{
             var net = first = cl.networkAddressFromCIDR(curval[0]);
             var brd = last = cl.broadcastAddressFromCIDR(curval[0]);
@@ -153,6 +179,10 @@ function calccidr(el,firstload=false){
             $("#ipcidr-extra1").val(net.toFixedLengthString())
             $("#ipcidr-extra2-label").text("Broadcast")
             $("#ipcidr-extra2").val(brd.toFixedLengthString())
+
+            $("#ipcidr-extra3-label").text(curval[3]?"Netmask":"CIDR")
+            $("#ipcidr-extra3").val(curval[3]?bigint2ip(BigInt("0b"+"1".repeat(curval[2][1])+"0".repeat(32-curval[2][1]))).toFixedLengthString():curval[2][1])
+
             if(curval[2][1] < 31){
                 first.octets[3] += 1;
                 last.octets[3] -= 1;
@@ -162,10 +192,11 @@ function calccidr(el,firstload=false){
         }
         saveInputVal("#inputcidr",curvaltxt)
     }else{
-        $("#ipcidr-extra1").val("")
         $("#ipcidr-first").val("")
         $("#ipcidr-last").val("")
+        $("#ipcidr-extra1").val("")
         $("#ipcidr-extra2").val("")
+        $("#ipcidr-extra3").val("")
     }
 }
 
@@ -828,6 +859,9 @@ function calcrange(el){
         <li class="nav-item">
             <a class="nav-link" id="mbpscalcbtn" onclick="gotopage('mbpscalc')">mbps to GB/mo</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" id="aboutbtn" onclick="gotopage('about')">About</a>
+        </li>
     </ul>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
@@ -855,6 +889,11 @@ function calcrange(el){
             <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
                 <label for="ipcidr-extra2" id="ipcidr-extra2-label" class="result-box-label col-12">Broadcast</label>
                 <input id="ipcidr-extra2" type="text" class="form-control result-box" readonly>
+            </div>
+
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="ipcidr-extra3" id="ipcidr-extra3-label" class="result-box-label col-12">Netmask/CIDR</label>
+                <input id="ipcidr-extra3" type="text" class="form-control result-box" readonly>
             </div>
         </div>
         
@@ -938,7 +977,6 @@ function calcrange(el){
             </div>
         </div>
         <div id="subtblcontainer" class="row data-row px-3 mt-2">
-            
         </div>
     </div>
     <div id="ip2cidr" class="col-12 container justify-content-center ip-form">
