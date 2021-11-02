@@ -62,10 +62,10 @@ function gotopage(p){
     }
 }
 function changepage(p){
-    $(".nav-link").toggleClass("active",false)
-    $("#"+p+"btn").toggleClass("active",true);
-    $(".ip-form").hide();
-    $("#"+p).show();
+    document.querySelectorAll(".nav-link").forEach(e=>e.classList.remove("active"))
+    document.querySelector("#"+p+"btn").classList.add("active");
+    document.querySelector(".ip-form").style.display="none";
+    document.querySelector("#"+p).style.display="block";
 
     gtag('config', 'UA-86131150-6', { "page_path": "#"+p });
 
@@ -90,10 +90,10 @@ function updateHash(){
 }
 
 function getInputVal(i){
-    var v = $(i).val().trim()
+    var v = document.querySelector(i).value.trim()
     if(window.firstload && i in window.curdetails['vals']){
         v = window.curdetails['vals'][i]
-        $(i).val(v)
+        document.querySelector(i).value = v
     }
 
     return v;
@@ -155,53 +155,53 @@ function calccidr(el,firstload=false){
     var curvaltxt = getInputVal("#inputcidr")
     var curval = getCIDRFromInput(curvaltxt)
 
-    $("#inputcidr").toggleClass("is-invalid",curval==null && curval != "")
-    $("#inputcidr").toggleClass("is-valid",curval!=null)
+    document.querySelector("#inputcidr").classList.toggle("is-invalid", curval==null && curval != "")
+    document.querySelector("#inputcidr").classList.toggle("is-valid", curval!=null)
 
     if(curval != null){
         var cl = getClassFromKind(curval[1])
         if(curval[1] == "ipv6"){
             var first = cl.firstUsableAddressFromCIDR(curval[0]);
             var last = cl.lastUsableAddressFromCIDR(curval[0]);
-            $("#ipcidr-first").val(first.toFixedLengthString())
-            $("#ipcidr-last").val(last.toFixedLengthString())
-            $("#ipcidr-extra1-label").text("Short")
-            $("#ipcidr-extra1").val(first.toString() + "/" + curval[2][1])
-            $("#ipcidr-extra2-label").text("Long")
-            $("#ipcidr-extra2").val(first.toFixedLengthString() + "/" + curval[2][1])
+            document.querySelector("#ipcidr-first").value = first.toFixedLengthString()
+            document.querySelector("#ipcidr-last").value = last.toFixedLengthString()
+            document.querySelector("#ipcidr-extra1-label").textContent = "Short"
+            document.querySelector("#ipcidr-extra1").value = first.toString() + "/" + curval[2][1]
+            document.querySelector("#ipcidr-extra2-label").textContent = "Long"
+            document.querySelector("#ipcidr-extra2").value = first.toFixedLengthString() + "/" + curval[2][1]
 
-            $("#ipcidr-extra3-label").text(curval[3]?"Netmask":"CIDR")
-            $("#ipcidr-extra3").val(curval[3]?bigint2ip(BigInt("0b"+"1".repeat(curval[2][1])+"0".repeat(128-curval[2][1]))).toFixedLengthString():curval[2][1])
+            document.querySelector("#ipcidr-extra3-label").textContent = curval[3]?"Netmask":"CIDR"
+            document.querySelector("#ipcidr-extra3").value = curval[3]?bigint2ip(BigInt("0b"+"1".repeat(curval[2][1])+"0".repeat(128-curval[2][1]))).toFixedLengthString():curval[2][1]
         }else{
             var net = first = cl.networkAddressFromCIDR(curval[0]);
             var brd = last = cl.broadcastAddressFromCIDR(curval[0]);
-            $("#ipcidr-extra1-label").text("Network")
-            $("#ipcidr-extra1").val(net.toFixedLengthString())
-            $("#ipcidr-extra2-label").text("Broadcast")
-            $("#ipcidr-extra2").val(brd.toFixedLengthString())
+            document.querySelector("#ipcidr-extra1-label").textContent = "Network"
+            document.querySelector("#ipcidr-extra1").value = net.toFixedLengthString()
+            document.querySelector("#ipcidr-extra2-label").textContent = "Broadcast"
+            document.querySelector("#ipcidr-extra2").value = brd.toFixedLengthString()
 
-            $("#ipcidr-extra3-label").text(curval[3]?"Netmask":"CIDR")
-            $("#ipcidr-extra3").val(curval[3]?bigint2ip(BigInt("0b"+"1".repeat(curval[2][1])+"0".repeat(32-curval[2][1]))).toFixedLengthString():curval[2][1])
+            document.querySelector("#ipcidr-extra3-label").textContent = curval[3]?"Netmask":"CIDR"
+            document.querySelector("#ipcidr-extra3").value = curval[3]?bigint2ip(BigInt("0b"+"1".repeat(curval[2][1])+"0".repeat(32-curval[2][1]))).toFixedLengthString():curval[2][1]
 
             if(curval[2][1] < 31){
                 first.octets[3] += 1;
                 last.octets[3] -= 1;
             }
-            $("#ipcidr-first").val(first.toFixedLengthString())
-            $("#ipcidr-last").val(last.toFixedLengthString())
+            document.querySelector("#ipcidr-first").value = first.toFixedLengthString()
+            document.querySelector("#ipcidr-last").value = last.toFixedLengthString()
         }
         saveInputVal("#inputcidr",curvaltxt)
     }else{
-        $("#ipcidr-first").val("")
-        $("#ipcidr-last").val("")
-        $("#ipcidr-extra1").val("")
-        $("#ipcidr-extra2").val("")
-        $("#ipcidr-extra3").val("")
+        document.querySelector("#ipcidr-first").value = ""
+        document.querySelector("#ipcidr-last").value = ""
+        document.querySelector("#ipcidr-extra1").value = ""
+        document.querySelector("#ipcidr-extra2").value = ""
+        document.querySelector("#ipcidr-extra3").value = ""
     }
 }
 
 function calcrdns(el){
-    var val = getInputVal("#inputrdns")// $("#inputrdns").val().trim()
+    var val = getInputVal("#inputrdns")// document.querySelector("#inputrdns").value.trim()
 
     var a2i_val = arpa2ip(val);
     var valid = true;
@@ -223,14 +223,14 @@ function calcrdns(el){
     if(valid) 
         saveInputVal("#inputrdns",val)
 
-    $("#rdns-res-label").text(label)
-    $("#rdns-res").val(result)
-    $("#inputrdns").toggleClass("is-invalid",!valid)
-    $("#inputrdns").toggleClass("is-valid",valid)
+    document.querySelector("#rdns-res-label").textContent = label
+    document.querySelector("#rdns-res").value = result
+    document.querySelector("#inputrdns").classList.toggle("is-invalid",!valid)
+    document.querySelector("#inputrdns").classList.toggle("is-valid",valid)
 }
 
 function calcnum(el){
-    var val = getInputVal("#inputnum") //$("#inputnum").val().trim()
+    var val = getInputVal("#inputnum") //document.querySelector("#inputnum").value.trim()
 
     var outlabels = [];
     var outvalues = [];
@@ -288,20 +288,20 @@ function calcnum(el){
         for(var x in possible_outputs){
             if(input_type == x) continue
 
-            $("#ntoa-out"+cur_out+"-label").text(x+":")
-            $("#ntoa-out"+cur_out).val(possible_outputs[x][0](ipval))
+            document.querySelector("#ntoa-out"+cur_out+"-label").textContent = x+":"
+            document.querySelector("#ntoa-out"+cur_out).value = possible_outputs[x][0](ipval)
             cur_out += 1
         }
         saveInputVal("#inputnum",val)
     }else{
         for(var i=1;i<=4;i++){
-            $("#ntoa-out"+i+"-label").text("Output:")
-            $("#ntoa-out"+i).val("")
+            document.querySelector("#ntoa-out"+i+"-label").textContent = "Output:"
+            document.querySelector("#ntoa-out"+i).value = ""
         }
     }
 
-    $("#inputnum").toggleClass("is-invalid",!valid)
-    $("#inputnum").toggleClass("is-valid",valid)
+    document.querySelector("#inputnum").classList.toggle("is-invalid",!valid)
+    document.querySelector("#inputnum").classList.toggle("is-valid",valid)
 }
 
 function splittblleaf(id,el){
@@ -335,12 +335,12 @@ function calcsubnettable(el){
     try{
         var subnet = window.ipaddr.parseCIDR(subnettxt)
     }catch(e){
-        $("#inputsubtblcidr").toggleClass("is-invalid",true)
-        $("#inputsubtblcidr").toggleClass("is-valid",false)
+        document.querySelector("#inputsubtblcidr").classList.toggle("is-invalid",true)
+        document.querySelector("#inputsubtblcidr").classList.toggle("is-valid",false)
         return;
     }
-    $("#inputsubtblcidr").toggleClass("is-invalid",false)
-    $("#inputsubtblcidr").toggleClass("is-valid",true)
+    document.querySelector("#inputsubtblcidr").classList.toggle("is-invalid",false)
+    document.querySelector("#inputsubtblcidr").classList.toggle("is-valid",true)
 
     var max_subs = subnet[0].kind()=="ipv4"?32n:128n;
 
@@ -378,7 +378,7 @@ function calcsubnettable(el){
         }
     }
 
-    var outtable = $("<table>").addClass("table table-bordered table-hover table-sm");
+    var outtable = Object.assign(document.createElement("table"), {className: "table table-bordered table-hover table-sm"});
 
     emptycells = [];
     leafrowmap = {};
@@ -394,9 +394,9 @@ function calcsubnettable(el){
         first_ip = cl.firstUsableAddressFromCIDR(subnettxt)
 
     for(var y=0;y<output.length;y++){
-        var row = $("<tr>");
+        var row = document.createElement("tr");
         rows[y] = row;
-        outtable.append(row);
+        outtable.appendChild(row);
         var treeval = output[y];
 
         emptycells.push(treeval[1])
@@ -416,14 +416,13 @@ function calcsubnettable(el){
 
         cur_ip_count += BigInt(2)<<BigInt(max_subs-new_subnet_cidr-1n)
 
-        var leafcell = $("<td>")
-            .text(leaftext)
-            .attr("colspan",maxdepth-treeval[0]+1n)
-            .toggleClass("subtbl-expanded",true)
-            .toggleClass("subtbl-clickable",true)
-            .click(splittblleaf.bind(null,treeval[1]))
-            
-        row.append(leafcell)
+        var leafcell = Object.assign(document.createElement("td"), {
+            textContent: leaftext,
+            colSpan: maxdepth-treeval[0]+1n,
+            className: "subtbl-expanded subtbl-clickable"
+        })
+        leafcell.addEventListener("click", splittblleaf.bind(null,treeval[1]))
+        row.appendChild(leafcell)
     }
 
 
@@ -449,14 +448,15 @@ function calcsubnettable(el){
 
             var depth = BigInt(bigint_log2(leafid))-1n
 
-            var cell = $("<td>")
-                .text("/"+(sub_cidr+depth))
-                .attr("rowspan",rowlen)
-                .toggleClass("subtbl-split",true)
+            var cell = Object.assign(document.createElement("td"), {
+                textContent: "/"+(sub_cidr+depth),
+                rowSpan: rowlen,
+                className: "subtbl-split"
+            })
                 
             if(rowlen == 2){
-                cell.click(mergetblleaf.bind(null,leafid>>1n))
-                .toggleClass("subtbl-clickable",true)
+                cell.addEventListener("click", mergetblleaf.bind(null,leafid>>1n))
+                cell.classList.add("subtbl-clickable")
             }
             rows[leafrow-leaflen].prepend(cell)
             leafrowmap[leafid>>1n] = leafrow-leaflen;
@@ -467,20 +467,20 @@ function calcsubnettable(el){
 
 /*        for(var x=maxdepth;x>0;x--){
             if(x==treeval[0]){
-                var cell = $("<td>").text(treeval[1]+":"+(subnet[1]+treeval[0]))
+                var cell = Object.assign(document.createElement("td"), {textContent: treeval[1]+":"+(subnet[1]+treeval[0])})
                 row.prepend(cell)
                 if(x<maxdepth){
                     cell.attr("colspan",maxdepth-x+1)
                 }
             }else{
-                var cell = $("<td>").text(treeval[1]+"{"+x+","+y+"}")
+                var cell = Object.assign(document.createElement("td"), {textContent: treeval[1]+"{"+x+","+y+"}"})
                 row.prepend(cell)
                 emptycells.push(treeval[1])
             }
         }*/
 
-    $("#subtblcontainer").empty();
-    $("#subtblcontainer").append(outtable);
+    document.querySelector("#subtblcontainer").textContent = "";
+    document.querySelector("#subtblcontainer").appendChild(outtable);
 
     window.curdetails['subtbl']=window.subtblbreakdown;
     // this calls updatehash, otherwise we would have to manually
@@ -503,10 +503,10 @@ function calcsubnetlist(el, changedCIDR){
                 var boldstyle = i%(max_subs==128?4:8)==0&&i!=max_subs?"style='font-weight:bold'":"";
                 optionshtml += "<option "+boldstyle+" value='"+i+"'>"+(BigInt(2)**BigInt(i-subnet[1]))+" Subnets (/"+i+")</option>"
             }
-            var cidrselect = $("#inputsubssubnet").html(optionshtml);
+            var cidrselect = document.querySelector("#inputsubssubnet").innerHTML = optionshtml;
         }
 
-        var desired_sub = getInputVal("#inputsubssubnet") // $("#inputsubssubnet").val()
+        var desired_sub = getInputVal("#inputsubssubnet") // document.querySelector("#inputsubssubnet").value
         
         if(desired_sub != null && desired_sub > subnet[1] && desired_sub <= max_subs){
             desired_sub = parseInt(desired_sub)
@@ -527,7 +527,7 @@ function calcsubnetlist(el, changedCIDR){
                 html_out+="<input type='text' readonly class='form-control result-box' value='"+bigint2ip(subnet_val,subnet[0].kind())+"/"+desired_sub+"'/>"
             }
 
-            $("#subcalc-out").html(html_out)
+            document.querySelector("#subcalc-out").innerHTML = html_out
             saveInputVal("#inputsubscidr",subnettxt)
             saveInputVal("#inputsubssubnet",desired_sub)
         }
@@ -535,8 +535,8 @@ function calcsubnetlist(el, changedCIDR){
         valid=false;
     }
 
-    $("#inputsubscidr").toggleClass("is-invalid",!valid)
-    $("#inputsubscidr").toggleClass("is-valid",valid)
+    document.querySelector("#inputsubscidr").classList.toggle("is-invalid",!valid)
+    document.querySelector("#inputsubscidr").classList.toggle("is-valid",valid)
 }
 
 function calcmbps(el, mbps_changed=null){
@@ -553,7 +553,7 @@ function calcmbps(el, mbps_changed=null){
         var changed_val = parseInt(getInputVal(changed_element))
         if(!isNaN(changed_val) && isFinite(changed_val)){
             var other_val = changed_val*(mbps_changed?mbps_to_gb:1/mbps_to_gb)
-            $(other_element).val(other_val)
+            document.querySelector(other_element).value = other_val
             saveInputVal(changed_element,changed_val,false)
             window.curdetails['vals']["last_change"]=mbps_changed
             updateHash()
@@ -562,8 +562,8 @@ function calcmbps(el, mbps_changed=null){
         }
     }catch(e){valid=false;}
     
-    $(changed_element).toggleClass("is-invalid",!valid)
-    $(other_element).toggleClass("is-invalid",false)
+    document.querySelector(changed_element).classList.toggle("is-invalid",!valid)
+    document.querySelector(other_element).classList.toggle("is-invalid",false)
 }
 
 var net_sizes = {"ipv4":{},"ipv6":{}};
@@ -622,24 +622,21 @@ function calcrange(el){
             lastvalid = false;
         }
     }
-    $("#inputcidr-firstip").toggleClass("is-invalid",!firstvalid)
-    $("#inputcidr-lastip").toggleClass("is-invalid",!lastvalid)
-    $("#inputcidr-firstip").toggleClass("is-valid",firstvalid)
-    $("#inputcidr-lastip").toggleClass("is-valid",lastvalid)
-    $("#ip2cidr-out").html(html_out)
+    document.querySelector("#inputcidr-firstip").classList.toggle("is-invalid",!firstvalid)
+    document.querySelector("#inputcidr-lastip").classList.toggle("is-invalid",!lastvalid)
+    document.querySelector("#inputcidr-firstip").classList.toggle("is-valid",firstvalid)
+    document.querySelector("#inputcidr-lastip").classList.toggle("is-valid",lastvalid)
+    document.querySelector("#ip2cidr-out").innerHTML = html_out
 }
 </script>
 <style>{{bootstrapcss}}</style>
 <script>
-{{jqueryjs}}
-{{popperjs}}
 {{bootstrapjs}}
 {{ipaddrjs}}
 {{bigintjs}}
 </script>
 <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous"> -->
 <!-- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script> -->
 <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script> -->
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ipaddr.js/1.9.1/ipaddr.min.js" integrity="sha512-PjCdew0WqybdnWhii1fl13pGKtBEZEsvs7Y78JW7aNWFHZemM257wxVQxktnV3u8qU6i/qcOqWVPneUL+oCsWw==" crossorigin="anonymous"></script> -->
 <!-- <script src="https://peterolson.github.io/BigInteger.js/BigInteger.min.js"></script> -->
@@ -653,7 +650,7 @@ function calcrange(el){
   gtag('config', 'UA-86131150-6', {  
       'linker': { 'domains': ['ipv6.tools', 'ipv4.tools'] },
       "send_page_view": false
-    });
+  });
 </script>
 <script>
     navigator.serviceWorker.register("swcacher.sw.js",{"updateViaCache":"all"})
