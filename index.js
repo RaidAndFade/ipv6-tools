@@ -7,22 +7,16 @@ addEventListener('fetch', event => {
 })
 
 async function mainpage_html(request) {
-    var bscss = await (await fetch(new Request("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"))).text()
-    var jqueryjs = await (await fetch(new Request("https://code.jquery.com/jquery-3.5.1.slim.min.js"))).text()
-    var popperjs = await (await fetch(new Request("https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"))).text()
-    var bootstrapjs = await (await fetch(new Request("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"))).text()
+    var bscss = await (await fetch(new Request("https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"))).text()
+    var bootstrapjs = await (await fetch(new Request("https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"))).text()
     var ipaddrjs = await (await fetch(new Request("https://cdnjs.cloudflare.com/ajax/libs/ipaddr.js/1.9.1/ipaddr.min.js"))).text()
     var bigintjs = await (await fetch(new Request("https://peterolson.github.io/BigInteger.js/BigInteger.min.js"))).text()
-    var upupjs = await (await fetch(new Request("https://cdnjs.cloudflare.com/ajax/libs/UpUp/1.1.0/upup.min.js"))).text()
 
     var html = MAINPAGE.replace("{{title}}","IP Tools")
                         .replace("{{bootstrapcss}}",bscss)
-                        .replace("{{jqueryjs}}",jqueryjs)
-                        .replace("{{popperjs}}",popperjs)
                         .replace("{{bootstrapjs}}",bootstrapjs)
                         .replace("{{ipaddrjs}}",ipaddrjs)
                         .replace("{{bigintjs}}",bigintjs)
-                        .replace("{{upupjs}}",upupjs)
                         .replace(/sourceMappingURL=.+\.map/gm,"")
 
     return new Response(html,{headers:{"content-type":"text/html","Cache-Control":"public"}})
