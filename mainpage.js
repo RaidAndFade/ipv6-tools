@@ -5,6 +5,7 @@ module.exports = `<!doctype html>
 <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>{{title}}</title>
+<style>{{bootstrapcss}}</style>
 <style>
 .ip-form {
     display: none;
@@ -15,20 +16,17 @@ module.exports = `<!doctype html>
     padding-top:10px;
 }
 .result-box { 
-    font-family:Courier;
+    font-family:Courier, monospace;
     font-size:0.8em!important;
     /* letter-spacing:-3px; */
 }
 .result-box-label { 
-    font-family:Courier;
+    font-family:Courier, monospace;
     font-size:0.8em!important;
     margin-bottom: 0px;
 }
 #page-container{
     padding-top:20px;
-}
-.nav-item{
-    cursor: pointer;
 }
 #ptitle {
     text-align: center;
@@ -42,6 +40,12 @@ module.exports = `<!doctype html>
 .subtbl-clickable:hover{
     cursor: pointer;
     background-color: #fafbf2;
+}
+.nav-link{
+    color: inherit !important;
+}
+.nav-link:focus, .nav-link:hover{
+    border-bottom-color: transparent !important;
 }
 </style>
 <script>
@@ -64,7 +68,7 @@ function gotopage(p){
 function changepage(p){
     document.querySelectorAll(".nav-link").forEach(e=>e.classList.remove("active"))
     document.querySelector("#"+p+"btn").classList.add("active");
-    document.querySelector(".ip-form").style.display="none";
+    document.querySelectorAll(".ip-form").forEach(e=>e.style.display="none");
     document.querySelector("#"+p).style.display="block";
 
     gtag('config', 'UA-86131150-6', { "page_path": "#"+p });
@@ -418,7 +422,7 @@ function calcsubnettable(el){
 
         var leafcell = Object.assign(document.createElement("td"), {
             textContent: leaftext,
-            colSpan: maxdepth-treeval[0]+1n,
+            colSpan: Number(maxdepth-treeval[0]+1n),
             className: "subtbl-expanded subtbl-clickable"
         })
         leafcell.addEventListener("click", splittblleaf.bind(null,treeval[1]))
@@ -450,7 +454,7 @@ function calcsubnettable(el){
 
             var cell = Object.assign(document.createElement("td"), {
                 textContent: "/"+(sub_cidr+depth),
-                rowSpan: rowlen,
+                rowSpan: Number(rowlen),
                 className: "subtbl-split"
             })
                 
@@ -470,7 +474,7 @@ function calcsubnettable(el){
                 var cell = Object.assign(document.createElement("td"), {textContent: treeval[1]+":"+(subnet[1]+treeval[0])})
                 row.prepend(cell)
                 if(x<maxdepth){
-                    cell.attr("colspan",maxdepth-x+1)
+                    cell.colSpan=maxdepth-x+1
                 }
             }else{
                 var cell = Object.assign(document.createElement("td"), {textContent: treeval[1]+"{"+x+","+y+"}"})
@@ -629,7 +633,6 @@ function calcrange(el){
     document.querySelector("#ip2cidr-out").innerHTML = html_out
 }
 </script>
-<style>{{bootstrapcss}}</style>
 <script>
 {{bootstrapjs}}
 {{ipaddrjs}}
@@ -855,61 +858,63 @@ function calcrange(el){
 <body>
 <div class="container" id="page-container">
     <div id="ptitle" class="col-12"><h1>IP Tools</h1></div>
+    <nav>
     <ul class="col-12 nav nav-tabs justify-content-center">
         <li class="nav-item">
-            <a class="nav-link" id="ipcidrbtn" onclick="gotopage('ipcidr')">IP/CIDR</a>
+            <a class="nav-link" id="ipcidrbtn" href="javascript:gotopage('ipcidr')">IP/CIDR</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="rdnsbtn" onclick="gotopage('rdns')">rDNS</a>
+            <a class="nav-link" id="rdnsbtn" href="javascript:gotopage('rdns')">rDNS</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="ntoabtn" onclick="gotopage('ntoa')">IP-Numeric</a>
+            <a class="nav-link" id="ntoabtn" href="javascript:gotopage('ntoa')">IP-Numeric</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subsbtn" onclick="gotopage('subs')">Subnet Calc</a>
+            <a class="nav-link" id="subsbtn" href="javascript:gotopage('subs')">Subnet Calc</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="subtblbtn" onclick="gotopage('subtbl')">Subnet Table</a>
+            <a class="nav-link" id="subtblbtn" href="javascript:gotopage('subtbl')">Subnet Table</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="ip2cidrbtn" onclick="gotopage('ip2cidr')">IPs to CIDRs</a>
+            <a class="nav-link" id="ip2cidrbtn" href="javascript:gotopage('ip2cidr')">IPs to CIDRs</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="mbpscalcbtn" onclick="gotopage('mbpscalc')">mbps to GB/mo</a>
+            <a class="nav-link" id="mbpscalcbtn" href="javascript:gotopage('mbpscalc')">mbps to GB/mo</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="aboutbtn" onclick="gotopage('about')">About</a>
+            <a class="nav-link" id="aboutbtn" href="javascript:gotopage('about')">About</a>
         </li>
     </ul>
+    </nav>
     <div id="ipcidr" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-12">
-                <div class="input-group-prepend">
+            <div class="col-12">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">IP/CIDR</span>
-                </div>
                 <input id="inputcidr" type="text" class="form-control result-box" onkeyup='calccidr(this)' aria-describedby="basic-addon1">
+            </div>
             </div>
         </div>
         <div class="row data-row">
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ipcidr-first" class="result-box-label col-12">First Usable</label>
                 <input id="ipcidr-first" type="text" class="form-control result-box" readonly>
             </div>
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ipcidr-last" class="result-box-label col-12">Last Usable</label>
                 <input id="ipcidr-last" type="text" class="form-control result-box" readonly>
             </div>
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ipcidr-extra1" id="ipcidr-extra1-label" class="result-box-label col-12">Network</label>
                 <input id="ipcidr-extra1" type="text" class="form-control result-box" readonly>
             </div>
             
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ipcidr-extra2" id="ipcidr-extra2-label" class="result-box-label col-12">Broadcast</label>
                 <input id="ipcidr-extra2" type="text" class="form-control result-box" readonly>
             </div>
 
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ipcidr-extra3" id="ipcidr-extra3-label" class="result-box-label col-12">Netmask/CIDR</label>
                 <input id="ipcidr-extra3" type="text" class="form-control result-box" readonly>
             </div>
@@ -918,15 +923,15 @@ function calcrange(el){
     </div>
     <div id="rdns" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-12">
-                <div class="input-group-prepend">
+            <div class="col-12">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">IP/rDNS</span>
-                </div>
                 <input id="inputrdns" type="text" class="form-control result-box" onkeyup='calcrdns(this)' aria-describedby="basic-addon1">
+            </div>
             </div>
         </div>
         <div class="row data-row">
-            <div class="input-group inputGroup-sizing-sm col-12">
+            <div class="col-12">
                 <label for="rdns-res" id="rdns-res-label" class="result-box-label col-12">Output:</label>
                 <input id="rdns-res" type="text" class="form-control result-box" readonly>
             </div>
@@ -934,27 +939,27 @@ function calcrange(el){
     </div>
     <div id="ntoa" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-12">
-                <div class="input-group-prepend">
+            <div class="col-12">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">IP/Number</span>
-                </div>
                 <input id="inputnum" type="text" class="form-control result-box" onkeyup='calcnum(this)' aria-describedby="basic-addon1">
+            </div>
             </div>
         </div>
         <div class="row data-row">
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ntoa-out1" id="ntoa-out1-label" class="result-box-label col-12">Output:</label>
                 <input id="ntoa-out1" type="text" class="form-control result-box" readonly>
             </div>
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ntoa-out2" id="ntoa-out2-label" class="result-box-label col-12">Output:</label>
                 <input id="ntoa-out2" type="text" class="form-control result-box" readonly>
             </div>
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ntoa-out3" id="ntoa-out3-label" class="result-box-label col-12">Output:</label>
                 <input id="ntoa-out3" type="text" class="form-control result-box" readonly>
             </div>
-            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="ntoa-out4" id="ntoa-out4-label" class="result-box-label col-12">Output:</label>
                 <input id="ntoa-out4" type="text" class="form-control result-box" readonly>
             </div>
@@ -962,21 +967,21 @@ function calcrange(el){
     </div>
     <div id="subs" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-12 col-sm-6">
-                <div class="input-group-prepend">
+            <div class="col-12 col-sm-6">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">CIDR Prefix</span>
-                </div>
                 <input id="inputsubscidr" type="text" class="form-control result-box" onkeyup='calcsubnetlist(this,false)' aria-describedby="basic-addon1">
             </div>
-            <div class="input-group col-12 col-sm-6">
-                <div class="input-group-prepend">
+            </div>
+            <div class="col-12 col-sm-6">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">Desired Subnets</span>
-                </div>
-                <select id="inputsubssubnet" class="form-control result-box" onchange='calcsubnetlist(this,true)' aria-describedby="basic-addon1"></select>
+                <select id="inputsubssubnet" class="form-select result-box" onchange='calcsubnetlist(this,true)' aria-describedby="basic-addon1"></select>
+            </div>
             </div>
         </div>
         <div class="row data-row">
-            <div class="input-group inputGroup-sizing-sm col-12">
+            <div class="col-12">
                 <label for="subcalc-out" class="result-box-label col-12">Possible Subnets:</label>
                 <div id="subcalc-out" class="col-12"></div>
             </div>
@@ -984,14 +989,16 @@ function calcrange(el){
     </div>
     <div id="subtbl" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-9">
-                <div class="input-group-prepend">
+            <div class="col-9">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">CIDR Prefix</span>
-                </div>
                 <input id="inputsubtblcidr" type="text" class="form-control result-box" onkeyup='calcsubnettable(this)' aria-describedby="basic-addon1">
             </div>
-            <div class="input-group col-3">
+            </div>
+            <div class="col-3">
+            <div class="input-group">
                 <button class="btn btn-secondary btn-sm col-12" onclick='clearsubnettable()'>Reset</button>
+            </div>
             </div>
         </div>
         <div id="subtblcontainer" class="row data-row px-3 mt-2">
@@ -999,21 +1006,21 @@ function calcrange(el){
     </div>
     <div id="ip2cidr" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-12 col-sm-6">
-                <div class="input-group-prepend">
+            <div class="col-12 col-sm-6">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">First IP</span>
-                </div>
                 <input id="inputcidr-firstip" type="text" class="form-control result-box" onkeyup='calcrange(this)' aria-describedby="basic-addon1">
             </div>
-            <div class="input-group col-12 col-sm-6">
-                <div class="input-group-prepend">
+            </div>
+            <div class="col-12 col-sm-6">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">Last IP</span>
-                </div>
                 <input id="inputcidr-lastip" type="text" class="form-control result-box" onkeyup='calcrange(this)' aria-describedby="basic-addon1">
+            </div>
             </div>
         </div>
         <div class="row data-row">
-            <div class="input-group inputGroup-sizing-sm col-12">
+            <div class="col-12">
                 <label for="ip2cidr-out" class="result-box-label col-12">Encompassing Subnets:</label>
                 <div id="ip2cidr-out" class="col-12"></div>
             </div>
@@ -1021,22 +1028,22 @@ function calcrange(el){
     </div>
     <div id="mbpscalc" class="col-12 container justify-content-center ip-form">
         <div class="row data-row">
-            <div class="input-group col-12 col-sm-6">
-                <div class="input-group-prepend">
+            <div class="col-12 col-sm-6">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon1">mbps</span>
-                </div>
                 <input id="inputmbps-rate" type="text" class="form-control result-box" onkeyup='calcmbps(this,true)' aria-describedby="basic-addon1">
             </div>
-            <div class="input-group col-12 col-sm-6">
-                <div class="input-group-prepend">
+            </div>
+            <div class="col-12 col-sm-6">
+            <div class="input-group">
                 <span class="input-group-text result-box" id="basic-addon2">GB/mo</span>
-                </div>
                 <input id="inputmbps-gb" type="text" class="form-control result-box" onkeyup='calcmbps(this,false)' aria-describedby="basic-addon2">
+            </div>
             </div>
         </div>
     </div>
     <div id="about" class="col-12 container justify-content-center ip-form">
-        <div class="row data-row">
+        <div>
             <p>Welcome! This is an all-in-one networking utility made by <a href="https://github.com/raidandfade">RaidAndFade</a>. 
             <br>If you have any suggestions please feel free to make a PR or Issue on the <a href="https://github.com/RaidAndFade/ipv6-tools">Github Repo</a>.
             <br>Keep up with my projects on Discord. <a href="https://discord.gg/aEyewR5J">https://discord.gg/aEyewR5J</a>

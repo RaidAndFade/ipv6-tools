@@ -9,3 +9,8 @@ route = "staging.ipv6.tools/*"
 
 [env.production]
 route = "ipv6.tools/*"
+
+[env.dev]
+account_id = ""
+zone_id = ""
+workers_dev = true

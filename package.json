@@ -1,5 +1,18 @@
 {
-  "name": "ipv6-tools",
-  "description": "[Pure CF Workers] Source code for https://ipv6.tools",
-  "main": "index.js"
+    "name": "my-app",
+    "version": "1.0.0",
+    "description": "package for creating workers templates",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "format": "prettier --write '**/*.{js,css,json,md}'"
+    },
+    "author": "Sepehr Ahmadi <business@gocode.it>",
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "^1.17.0"
+    },
+    "dependencies": {
+        "serverless-cloudflare-workers": "^1.2.0"
+    }
 }
