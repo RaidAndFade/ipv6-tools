@@ -1017,6 +1017,21 @@ function calcrange(el){
             </div>
         </div>
     </div>
+    <div id="about" class="col-12 container justify-content-center ip-form">
+        <div class="row data-row">
+            <p>Welcome! This is an all-in-one networking utility made by <a href="https://github.com/raidandfade">RaidAndFade</a>. 
+            <br>If you have any suggestions please feel free to make a PR or Issue on the <a href="https://github.com/RaidAndFade/ipv6-tools">Github Repo</a>.
+            <br>Keep up with my projects on Discord. <a href="https://discord.gg/aEyewR5J">https://discord.gg/aEyewR5J</a>
+            <br>Check out <a href="https://xenyth.cloud">Xenyth Cloud</a>
+            <br><br>Tips and Tricks for IP Tools:
+            <br><ul>
+                <li>Your link stores your input! Share your input with others or save it for later.</li>
+                <li>Both ipv4.tools and ipv6.tools support IPv4 and IPv6, the name is just cosmetic.</li>
+                <li>The site uses service workers, and is fully self-contained. You can use it offline after first load!</li>
+            </ul>
+            </p>
+        </div>
+    </div>
 </div>
 </div>
 <script>
