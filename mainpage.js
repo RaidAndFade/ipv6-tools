@@ -339,7 +339,10 @@ function splittblleaf(id,el){
 }
 
 function mergetblleaf(id,el){
-    window.subtblbreakdown.splice(window.subtblbreakdown.indexOf(id),1);
+    console.log(id);
+    var i=window.subtblbreakdown.indexOf(""+id)
+    if(i>-1)
+       window.subtblbreakdown.splice(i,1);
     calcsubnettable(null);
 }
 
