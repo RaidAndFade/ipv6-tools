@@ -8,7 +8,7 @@
         "format": "prettier --write '**/*.{js,css,json,md}'"
     },
     "author": "Sepehr Ahmadi <business@gocode.it>",
-    "license": "MIT",
+    "license": "AGPL-3.0",
     "devDependencies": {
         "prettier": "^1.17.0"
     },
