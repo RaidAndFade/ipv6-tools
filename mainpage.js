@@ -36,12 +36,33 @@ module.exports = `<!doctype html>
 .subtbl-split{
     background-color: #f0f6fb;
 }
+.subtbl-color1{
+    background-color: #c8f1db;
+}
+.subtbl-color2{
+    background-color: #c8def1;
+}
+.subtbl-color3{
+    background-color: #f1c8de;
+}
+.subtbl-color4{
+    background-color: #dbc8f1;
+}
+.subtbl-color5{
+    background-color: #f1dbc8;
+}
+.subtbl-color6{
+    background-color: #c8caf1;
+}
+.subtbl-color7{
+    background-color: #c8f1ef;
+}
 .subtbl-clickable{
     cursor: pointer;
 }
 .subtbl-clickable:hover{
     cursor: pointer;
-    background-color: #fafbf2;
+    font-weight: bold;
 }
 </style>
 <script>
@@ -318,13 +339,20 @@ function splittblleaf(id,el){
 }
 
 function mergetblleaf(id,el){
-    console.log(id);
     window.subtblbreakdown.splice(window.subtblbreakdown.indexOf(id),1);
     calcsubnettable(null);
 }
 
+function changetblcolor(id){
+    console.log(id);
+    window.subtblcolors[id]=((window.subtblcolors[id]||0)+1)%8
+    calcsubnettable(null);
+    return false;
+}
+
 function clearsubnettable(){
     window.subtblbreakdown=[];
+    window.subtblcolors={};
     calcsubnettable(null);
 }
 
@@ -349,8 +377,13 @@ function calcsubnettable(el){
     }
 
     var tblbreakdown = window.subtblbreakdown;
-    if(curdetails['tbldata'])
-        tblbreakdown = curdetails['tbldata']
+    if(window.curdetails['tbldata'])
+        tblbreakdown = window.curdetails['tbldata']
+
+    var tblcolors;
+    if(!window.subtblcolors){
+        tblcolors=window.subtblcolors=window.curdetails['subtblcolor']||{};
+    }
     
     var output = [];
     var merges = [];
@@ -386,6 +419,8 @@ function calcsubnettable(el){
     cur_ip_count = BigInt(0);
     var rowlens = {}
 
+    var newcolors = {};
+
     var cl = getClassFromKind(subnet[0].kind())
 
     if(subnet[0].kind()=="ipv4")
@@ -416,12 +451,19 @@ function calcsubnettable(el){
 
         cur_ip_count += BigInt(2)<<BigInt(max_subs-new_subnet_cidr-1n)
 
+        var cellcolor = window.subtblcolors[treeval[1]]||0
+
         var leafcell = $("<td>")
             .text(leaftext)
             .attr("colspan",maxdepth-treeval[0]+1n)
             .toggleClass("subtbl-expanded",true)
             .toggleClass("subtbl-clickable",true)
+            .toggleClass("subtbl-color"+cellcolor,true)
             .click(splittblleaf.bind(null,treeval[1]))
+            .contextmenu(changetblcolor.bind(null,treeval[1]))
+
+        if(cellcolor>0)
+            newcolors[treeval[1]]=cellcolor
             
         row.append(leafcell)
     }
@@ -448,11 +490,17 @@ function calcsubnettable(el){
             delete leafrowmap[leafid-1n];
 
             var depth = BigInt(bigint_log2(leafid))-1n
+            var cellcolor = window.subtblcolors[leafid>>1n]||0
 
             var cell = $("<td>")
                 .text("/"+(sub_cidr+depth))
                 .attr("rowspan",rowlen)
                 .toggleClass("subtbl-split",true)
+                .toggleClass("subtbl-color"+cellcolor,true)
+                .contextmenu(changetblcolor.bind(null,leafid>>1n))
+
+            if(cellcolor>0)
+                newcolors[leafid>>1n]=cellcolor
                 
             if(rowlen == 2){
                 cell.click(mergetblleaf.bind(null,leafid>>1n))
@@ -465,24 +513,12 @@ function calcsubnettable(el){
         }
     }
 
-/*        for(var x=maxdepth;x>0;x--){
-            if(x==treeval[0]){
-                var cell = $("<td>").text(treeval[1]+":"+(subnet[1]+treeval[0]))
-                row.prepend(cell)
-                if(x<maxdepth){
-                    cell.attr("colspan",maxdepth-x+1)
-                }
-            }else{
-                var cell = $("<td>").text(treeval[1]+"{"+x+","+y+"}")
-                row.prepend(cell)
-                emptycells.push(treeval[1])
-            }
-        }*/
-
     $("#subtblcontainer").empty();
     $("#subtblcontainer").append(outtable);
 
     window.curdetails['subtbl']=window.subtblbreakdown;
+    window.curdetails['subtblcolor']=newcolors;
+
     // this calls updatehash, otherwise we would have to manually
     saveInputVal("#inputsubtblcidr",subnettxt)
 }
