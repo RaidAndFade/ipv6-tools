@@ -842,16 +842,6 @@ function calcrange(el){
         }
         return mask;
     }
-    // window.ipaddr.IPv4.firstUsableAddressFromCIDR = function (cidr) {
-    //     net = window.IPv4.networkAddressFromCIDR(cidr);
-    //     net.octets[3]+=1;
-    //     return net
-    // }
-    // window.ipaddr.IPv4.lastUsableAddressFromCIDR = function (cidr) {
-    //     net = window.IPv4.broadcastAddressFromCIDR(cidr);
-    //     net.octets[3]-=1;
-    //     return net
-    // }
     window.ipaddr.IPv6.firstUsableAddressFromCIDR = function (string) {
         let cidr, i, ipInterfaceOctets, octets, subnetMaskOctets;
         try {
