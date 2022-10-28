@@ -1072,7 +1072,7 @@ function calcrange(el){
             <p>Welcome! This is an all-in-one networking utility made by <a href="https://github.com/raidandfade">RaidAndFade</a>. 
             <br>If you have any suggestions please feel free to make a PR or Issue on the <a href="https://github.com/RaidAndFade/ipv6-tools">Github Repo</a>.
             <br>Keep up with my projects on Discord. <a href="https://discord.gg/aEyewR5J">https://discord.gg/aEyewR5J</a>
-            <br>Check out <a href="https://xenyth.cloud">Xenyth Cloud</a>
+            <br>Check out <a href="https://xenyth.cloud">Xenyth Cloud</a>, <a href="https://as835.net">AS835</a>, and <a href="https://gocode.it">GoCodeIT</a>
             <br><br>Tips and Tricks for IP Tools:
             <br><ul>
                 <li>Your link stores your input! Share your input with others or save it for later.</li>
