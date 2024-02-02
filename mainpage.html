@@ -70,6 +70,7 @@ const pagefuncs = {
     "ipcidr":calccidr,
     "rdns":calcrdns,
     "ntoa":calcnum,
+    "mac":calcmac,
     "subs":calcsubnetlist,
     "subtbl":calcsubnettable,
     "ip2cidr":calcrange,
@@ -248,6 +249,73 @@ function calcrdns(el){
     $("#rdns-res").val(result)
     $("#inputrdns").toggleClass("is-invalid",!valid)
     $("#inputrdns").toggleClass("is-valid",valid)
+}
+
+function calcmac(el){
+    var val = getInputVal("#inputmac")
+
+    var valid = /^([0-9a-fA-F]{2}[:\\-\\.]?){2,5}([0-9a-fA-F]{0,2})$/.test(val)
+    $("#inputmac").toggleClass("is-invalid",!valid)
+    $("#inputmac").toggleClass("is-valid",valid)
+    if(valid)
+        saveInputVal("#inputmac",val)
+    else
+        return
+
+    fetch("https://maclookup.func.xny.onl/get/"+val).then((res)=>res.json()).then((res)=>{
+        console.log(res)
+        var resbox = document.getElementById("res")
+        $("#mac-out1").val("")
+        $("#mac-out2").val("")
+        $("#mac-out3").val("")
+        $("#mac-out4").val("")
+        $("#mac-orgname").html("")
+        $("#maclist-out").html("")
+
+        if(res['type']=="oui" || res['type']=="cid"){
+            if(res['scope']=="global" || (res['scope']=="local" && res['type']=="cid")){
+                if(res[res['type']]){
+                    var block_start = res[res['type']]['block'] + "0".repeat(12-res[res['type']]['block'].length)
+                    var block_end = res[res['type']]['block'] + "f".repeat(12-res[res['type']]['block'].length)
+
+                    block_start = block_start.match(/.{2}/g).join(":").toUpperCase()
+                    block_end = block_end.match(/.{2}/g).join(":").toUpperCase()
+
+                    $("#mac-out1").val(block_start + " - " + block_end)
+                    $("#mac-out2").val(res['type']+" "+res[res['type']]['assignment']+" | "+res['usage'])
+                    $("#mac-out3").val(res[res['type']]['org']['name'])
+                    $("#mac-orgname").html(res[res['type']]['org']['name'])
+                    fetch("https://maclookup.func.xny.onl/org/"+res[res['type']]['org']['id']).then((res)=>res.json()).then((res)=>{
+                        console.log(res)
+                        let outhtml = ""
+                        for(var block of res['blocks']){
+                            var block_start = block['block'] + "0".repeat(12-block['block'].length)
+                            var block_end = block['block'] + "f".repeat(12-block['block'].length)
+        
+                            block_start = block_start.match(/.{2}/g).join(":").toUpperCase()
+                            block_end = block_end.match(/.{2}/g).join(":").toUpperCase()
+
+                            outhtml += '<input type="text" class="form-control result-box" value="'+block_start+" - "+block_end+'" readonly>'
+                        }
+                        $("#maclist-out").html(outhtml)
+                    })
+                    $("#mac-out4").val(res[res['type']]['org']['address'])
+
+
+                }else{
+                    $("#mac-out1").val("Unassigned")
+                    $("#mac-out2").val(res['type'] + " "+ res['scope'] +" | "+res['usage'])
+                }
+            }else{
+                $("#mac-out2").val(res['scope']+" | "+res['usage'])
+                $("#mac-out3").val(res['type'])
+            }
+        }else{
+            $("#mac-out1").val("Private")
+            $("#mac-out2").val("Local " + res['usage'])
+        }
+    })    
+
 }
 
 function calcnum(el){
@@ -898,6 +966,9 @@ function calcrange(el){
             <a class="nav-link" id="ntoabtn" onclick="gotopage('ntoa')">IP-Numeric</a>
         </li>
         <li class="nav-item">
+            <a class="nav-link" id="macbtn" onclick="gotopage('mac')">Mac</a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" id="subsbtn" onclick="gotopage('subs')">Subnet Calc</a>
         </li>
         <li class="nav-item">
@@ -961,6 +1032,38 @@ function calcrange(el){
             <div class="input-group inputGroup-sizing-sm col-12">
                 <label for="rdns-res" id="rdns-res-label" class="result-box-label col-12">Output:</label>
                 <input id="rdns-res" type="text" class="form-control result-box" readonly>
+            </div>
+        </div>
+    </div>
+    <div id="mac" class="col-12 container justify-content-center ip-form">
+        <div class="row data-row">
+            <div class="input-group col-12">
+                <div class="input-group-prepend">
+                <span class="input-group-text result-box" id="basic-addon1">Mac Address</span>
+                </div>
+                <input id="inputmac" type="text" class="form-control result-box" onkeyup='calcmac(this)' aria-describedby="basic-addon1">
+            </div>
+        </div>
+        <div class="row data-row">
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="mac-out1" id="mac-out1-label" class="result-box-label col-12">Block:</label>
+                <input id="mac-out1" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="mac-out2" id="mac-out2-label" class="result-box-label col-12">Assignment Type:</label>
+                <input id="mac-out2" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="mac-out3" id="mac-out3-label" class="result-box-label col-12">Org Owner:</label>
+                <input id="mac-out3" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12 col-md-6">
+                <label for="mac-out4" id="mac-out4-label" class="result-box-label col-12">Org Address:</label>
+                <input id="mac-out4" type="text" class="form-control result-box" readonly>
+            </div>
+            <div class="input-group inputGroup-sizing-sm col-12">
+                <label for="maclist-out" class="result-box-label col-12">Other Blocks owned by <span id="mac-orgname"></span>:</label>
+                <div id="maclist-out" class="col-12"></div>
             </div>
         </div>
     </div>

@@ -1,6 +1,6 @@
 const Router = require('./router')
 
-const MAINPAGE = require('./mainpage.js')
+const MAINPAGE = require('./mainpage.html')
 
 addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
@@ -32,7 +32,7 @@ async function handleRequest(request) {
     const r = new Router()
     r.get('/', mainpage_html) 
 
-    swjs = `
+    let swjs = `
     self.addEventListener("message", function(e) {
         if(e.data=="clear"){
             caches.keys().then((a)=>{for(var b of a)caches.delete(b);})
@@ -45,7 +45,7 @@ async function handleRequest(request) {
     self.addEventListener("fetch", function(t) {
         if(this.devel == null) this.devel=false;
         const cache_prefix = "ip-tools-cache";
-        const cache_version = "v1.0.2";
+        const cache_version = "v1.0.3";
         const cache_name = cache_prefix + "-" + cache_version;
 
         t.respondWith(caches.open(cache_name).then(function(cache){return cache.match(t.request).then(function(e) {
