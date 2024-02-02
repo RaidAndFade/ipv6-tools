@@ -2,3 +2,7 @@
 [Pure CF Workers] Source code for https://ipv6.tools
 
 Test Deployment
+
+
+# Compilation
+simply run "webpack"

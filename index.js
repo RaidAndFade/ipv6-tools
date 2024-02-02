@@ -6,26 +6,52 @@ addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
 })
 
+async function get_req(url) {
+    return await (await fetch(new Request(url))).text(); 
+}
+
+async function get_reqs() {
+    return await Promise.all([
+        get_req("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"),
+        get_req("https://code.jquery.com/jquery-3.5.1.slim.min.js"),
+        get_req("https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"),
+        get_req("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"),
+        get_req("https://cdnjs.cloudflare.com/ajax/libs/ipaddr.js/1.9.1/ipaddr.min.js"),
+        get_req("https://peterolson.github.io/BigInteger.js/BigInteger.min.js"),
+        get_req("https://cdnjs.cloudflare.com/ajax/libs/UpUp/1.1.0/upup.min.js"),
+    ])
+}
+
 async function mainpage_html(request) {
-    var bscss = await (await fetch(new Request("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"))).text()
-    var jqueryjs = await (await fetch(new Request("https://code.jquery.com/jquery-3.5.1.slim.min.js"))).text()
-    var popperjs = await (await fetch(new Request("https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"))).text()
-    var bootstrapjs = await (await fetch(new Request("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"))).text()
-    var ipaddrjs = await (await fetch(new Request("https://cdnjs.cloudflare.com/ajax/libs/ipaddr.js/1.9.1/ipaddr.min.js"))).text()
-    var bigintjs = await (await fetch(new Request("https://peterolson.github.io/BigInteger.js/BigInteger.min.js"))).text()
-    var upupjs = await (await fetch(new Request("https://cdnjs.cloudflare.com/ajax/libs/UpUp/1.1.0/upup.min.js"))).text()
+    // var bscss = await (await fetch(new Request("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"))).text()
+    // var jqueryjs = await (await fetch(new Request("https://code.jquery.com/jquery-3.5.1.slim.min.js"))).text()
+    // var popperjs = await (await fetch(new Request("https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"))).text()
+    // var bootstrapjs = await (await fetch(new Request("https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"))).text()
+    // var ipaddrjs = await (await fetch(new Request("https://cdnjs.cloudflare.com/ajax/libs/ipaddr.js/1.9.1/ipaddr.min.js"))).text()
+    // var bigintjs = await (await fetch(new Request("https://peterolson.github.io/BigInteger.js/BigInteger.min.js"))).text()
+    // var upupjs = await (await fetch(new Request("https://cdnjs.cloudflare.com/ajax/libs/UpUp/1.1.0/upup.min.js"))).text()
 
-    var html = MAINPAGE.replace("{{title}}","IP Tools")
-                        .replace("{{bootstrapcss}}",bscss)
-                        .replace("{{jqueryjs}}",jqueryjs)
-                        .replace("{{popperjs}}",popperjs)
-                        .replace("{{bootstrapjs}}",bootstrapjs)
-                        .replace("{{ipaddrjs}}",ipaddrjs)
-                        .replace("{{bigintjs}}",bigintjs)
-                        .replace("{{upupjs}}",upupjs)
-                        .replace(/sourceMappingURL=.+\.map/gm,"")
+    try{
+        var html = await kv.get("cached")
+        var was_cached = true;
+    }catch(_){
+        var was_cached = false;
+        var reqs = await get_reqs()
+    
+        html = MAINPAGE.replace("{{title}}","IP Tools")
+                            .replace("{{bootstrapcss}}",reqs[0])
+                            .replace("{{jqueryjs}}",reqs[1])
+                            .replace("{{popperjs}}",reqs[2])
+                            .replace("{{bootstrapjs}}",reqs[3])
+                            .replace("{{ipaddrjs}}",reqs[4])
+                            .replace("{{bigintjs}}",reqs[5])
+                            .replace("{{upupjs}}",reqs[6])
+                            .replace(/sourceMappingURL=.+\.map/gm,"")
 
-    return new Response(html,{headers:{"content-type":"text/html","Cache-Control":"public"}})
+        await kv.set("cached", html)
+    }
+
+    return new Response(html,{headers:{"content-type":"text/html","Cache-Control":"public","x-is-cached":was_cached}})
 }
 
 async function handleRequest(request) {
